@@ -150,7 +150,7 @@ struct indexer_of;
 
 template <array T, std::size_t...Is>
 struct indexer_of<T, std::index_sequence<Is...>> {
-    using type = std::index_sequence<zero_index<Is>...>;
+    using type = std::pair<std::index_sequence<zero_index<Is>...>, extents_of_t<T>>;
 };
 
 template <array T>
@@ -210,34 +210,33 @@ struct index_sequence_lead<std::index_sequence<Head, Tail...>> {
 };
 
 template <typename...>
-struct next_index;
+struct next_indexer;
 
 template <std::size_t I, std::size_t E>
-struct next_index<std::index_sequence<I>, std::index_sequence<E>> {
-    using type = std::index_sequence<(I + 1) < E ? I + 1 : 0>;
-
+struct next_indexer<std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
     inline static constexpr bool carries{I + 1 == E};
+    using type = std::pair<std::index_sequence<(I + 1) < E ? I + 1 : 0>, std::index_sequence<E>>;
 };
 
 template <std::size_t...Is, std::size_t...Es>
 requires (sizeof...(Is) == sizeof...(Es))
-struct next_index<std::index_sequence<Is...>, std::index_sequence<Es...>> {
+struct next_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
 private:
     inline static constexpr bool carries{
-        next_index<
+        next_indexer<std::pair<
             typename index_sequence_tail<std::index_sequence<Is...>>::type,
-            typename index_sequence_tail<std::index_sequence<Es...>>::type
+            typename index_sequence_tail<std::index_sequence<Es...>>::type>
         >::carries
     };
 
 public:
-    using type = std::conditional_t<carries,
+    using type = std::pair<std::conditional_t<carries,
         // if the tail index carries, then type is "next<lead>", 0
         typename concat_sequence<
-            typename next_index<
+            typename next_indexer<std::pair<
                 typename index_sequence_lead<std::index_sequence<Is...>>::type,
-                typename index_sequence_lead<std::index_sequence<Es...>>::type
-            >::type,
+                typename index_sequence_lead<std::index_sequence<Es...>>::type>
+            >::type::first_type,
             std::index_sequence<0>
         >::type,
         // if the tail index does not carry, then type is lead, tail + 1
@@ -245,7 +244,7 @@ public:
             typename index_sequence_lead<std::index_sequence<Is...>>::type,
             std::index_sequence<index_sequence_tail<std::index_sequence<Is...>>::value + 1>
         >::type
-    >;
+    >, std::index_sequence<Es...>>;
 };
 
 }//array_meta

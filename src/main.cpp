@@ -293,22 +293,22 @@ namespace test {
 	constexpr void indexer_creation()
 	{
 		constexpr int a1[1]{};
-		static_assert(std::is_same_v<indexer_of_t<decltype(a1)>, std::index_sequence<0>>);
+		static_assert(std::is_same_v<indexer_of_t<decltype(a1)>, std::pair<std::index_sequence<0>, std::index_sequence<1>>>);
 
 		constexpr int a2[10][20]{};
-		static_assert(std::is_same_v<indexer_of_t<decltype(a2)>, std::index_sequence<0, 0>>);
+		static_assert(std::is_same_v<indexer_of_t<decltype(a2)>, std::pair<std::index_sequence<0, 0>, std::index_sequence<10, 20>>>);
 
 		constexpr int a3[5][6][3]{};
-		static_assert(std::is_same_v<indexer_of_t<decltype(a3)>, std::index_sequence<0, 0, 0>>);
+		static_assert(std::is_same_v<indexer_of_t<decltype(a3)>, std::pair<std::index_sequence<0, 0, 0>, std::index_sequence<5, 6, 3>>>);
 
 		constexpr std::array<int, 11> a4{};
-		static_assert(std::is_same_v<indexer_of_t<decltype(a4)>, std::index_sequence<0>>);
+		static_assert(std::is_same_v<indexer_of_t<decltype(a4)>, std::pair<std::index_sequence<0>, std::index_sequence<11>>>);
 
 		constexpr std::array<std::array<int, 5>, 12> a5{};
-		static_assert(std::is_same_v<indexer_of_t<decltype(a5)>, std::index_sequence<0, 0>>);
+		static_assert(std::is_same_v<indexer_of_t<decltype(a5)>, std::pair<std::index_sequence<0, 0>, std::index_sequence<12, 5>>>);
 
 		constexpr std::array<std::array<std::array<int, 31>, 22>, 13> a6{};
-		static_assert(std::is_same_v<indexer_of_t<decltype(a6)>, std::index_sequence<0, 0, 0>>);
+		static_assert(std::is_same_v<indexer_of_t<decltype(a6)>, std::pair<std::index_sequence<0, 0, 0>, std::index_sequence<13, 22, 31>>>);
 
 		using s1 = concat_sequence<std::index_sequence<0>>::type;
 		static_assert(std::is_same_v<s1, std::index_sequence<0>>);
@@ -326,11 +326,10 @@ namespace test {
 		static_assert(index_sequence_tail<std::index_sequence<0, 1, 2>>::value == 2);
 
 		constexpr int a7[3]{};
-		using extents_a7 = extents_of_t<decltype(a7)>;
 		using indexer0_a7 = indexer_of_t<decltype(a7)>;
-		using indexer1_a7 = next_index<indexer0_a7, extents_a7>::type;
-		using indexer2_a7 = next_index<indexer1_a7, extents_a7>::type;
-		using indexer3_a7 = next_index<indexer2_a7, extents_a7>::type;
+		using indexer1_a7 = next_indexer<indexer0_a7>::type;
+		using indexer2_a7 = next_indexer<indexer1_a7>::type;
+		using indexer3_a7 = next_indexer<indexer2_a7>::type;
 		static_assert(std::is_same_v<indexer0_a7, indexer3_a7>);
 
 		std::cout << diagnostic::demangle<indexer0_a7>() << '\n';
@@ -339,16 +338,15 @@ namespace test {
 		std::cout << diagnostic::demangle<indexer3_a7>() << '\n';
 
 		constexpr int a8[2][3]{};
-		using extents_a8 = extents_of_t<decltype(a8)>;
 		using indexer0_a8 = indexer_of_t<decltype(a8)>;
-		static_assert(std::is_same_v<indexer0_a8, std::index_sequence<0, 0>>);
-		using indexer1_a8 = next_index<indexer0_a8, extents_a8>::type;
-		using indexer2_a8 = next_index<indexer1_a8, extents_a8>::type;
-		using indexer3_a8 = next_index<indexer2_a8, extents_a8>::type;
-		using indexer4_a8 = next_index<indexer3_a8, extents_a8>::type;
-		using indexer5_a8 = next_index<indexer4_a8, extents_a8>::type;
-		using indexer6_a8 = next_index<indexer5_a8, extents_a8>::type;
-		
+		static_assert(std::is_same_v<indexer0_a8, std::pair<std::index_sequence<0, 0>, std::index_sequence<2, 3>>>);
+		using indexer1_a8 = next_indexer<indexer0_a8>::type;
+		using indexer2_a8 = next_indexer<indexer1_a8>::type;
+		using indexer3_a8 = next_indexer<indexer2_a8>::type;
+		using indexer4_a8 = next_indexer<indexer3_a8>::type;
+		using indexer5_a8 = next_indexer<indexer4_a8>::type;
+		using indexer6_a8 = next_indexer<indexer5_a8>::type;
+
 		std::cout << diagnostic::demangle<indexer0_a8>() << '\n';
 		std::cout << diagnostic::demangle<indexer1_a8>() << '\n';
 		std::cout << diagnostic::demangle<indexer2_a8>() << '\n';
