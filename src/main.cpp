@@ -1,116 +1,370 @@
 #include <array>
 #include <iostream>
-#include "std_array_meta.hpp"
+#include <type_traits>
+#include <utility>
+#include "array_meta.hpp"
+#include "demangle.hpp"
+
+namespace test {
+	using namespace array_meta;
+
+	constexpr void type_checks()
+	{
+		{// constexpr std_arrays
+			constexpr int a1[1]{};
+			static_assert(not is_std_array_v<decltype(a1)>);
+
+			constexpr int a2[1][1]{};
+			static_assert(not is_std_array_v<decltype(a2)>);
+
+			constexpr int a3[1][1][1]{};
+			static_assert(not is_std_array_v<decltype(a3)>);
+
+			constexpr std::array<int, 1> a4{};
+			static_assert(is_std_array_v<decltype(a4)>);
+
+			constexpr std::array<std::array<int, 1>, 1> a5{};
+			static_assert(is_std_array_v<decltype(a5)>);
+
+			constexpr std::array<std::array<std::array<int, 1>, 1>, 1> a6{};
+			static_assert(is_std_array_v<decltype(a6)>);
+		}
+
+		{// const std_arrays
+			const int a1[1]{};
+			static_assert(not is_std_array_v<decltype(a1)>);
+
+			const int a2[1][1]{};
+			static_assert(not is_std_array_v<decltype(a2)>);
+
+			const int a3[1][1][1]{};
+			static_assert(not is_std_array_v<decltype(a3)>);
+
+			const std::array<int, 1> a4{};
+			static_assert(is_std_array_v<decltype(a4)>);
+
+			const std::array<std::array<int, 1>, 1> a5{};
+			static_assert(is_std_array_v<decltype(a5)>);
+
+			const std::array<std::array<std::array<int, 1>, 1>, 1> a6{};
+			static_assert(is_std_array_v<decltype(a6)>);
+		}
+
+		{// std_arrays
+			int a1[1]{};
+			static_assert(not is_std_array_v<decltype(a1)>);
+
+			int a2[1][1]{};
+			static_assert(not is_std_array_v<decltype(a2)>);
+
+			int a3[1][1][1]{};
+			static_assert(not is_std_array_v<decltype(a3)>);
+
+			std::array<int, 1> a4{};
+			static_assert(is_std_array_v<decltype(a4)>);
+
+			std::array<std::array<int, 1>, 1> a5{};
+			static_assert(is_std_array_v<decltype(a5)>);
+
+			std::array<std::array<std::array<int, 1>, 1>, 1> a6{};
+			static_assert(is_std_array_v<decltype(a6)>);
+		}
+
+		{// volatile std_arrays
+			volatile int a1[1]{};
+			static_assert(not is_std_array_v<decltype(a1)>);
+
+			volatile int a2[1][1]{};
+			static_assert(not is_std_array_v<decltype(a2)>);
+
+			volatile int a3[1][1][1]{};
+			static_assert(not is_std_array_v<decltype(a3)>);
+
+			volatile std::array<int, 1> a4{};
+			static_assert(is_std_array_v<decltype(a4)>);
+
+			volatile std::array<std::array<int, 1>, 1> a5{};
+			static_assert(is_std_array_v<decltype(a5)>);
+
+			volatile std::array<std::array<std::array<int, 1>, 1>, 1> a6{};
+			static_assert(is_std_array_v<decltype(a6)>);
+		}
+
+		{// const volatile std_arrays
+			const volatile int a1[1]{};
+			static_assert(not is_std_array_v<decltype(a1)>);
+
+			const volatile int a2[1][1]{};
+			static_assert(not is_std_array_v<decltype(a2)>);
+
+			const volatile int a3[1][1][1]{};
+			static_assert(not is_std_array_v<decltype(a3)>);
+
+			const volatile std::array<int, 1> a4{};
+			static_assert(is_std_array_v<decltype(a4)>);
+
+			const volatile std::array<std::array<int, 1>, 1> a5{};
+			static_assert(is_std_array_v<decltype(a5)>);
+
+			const volatile std::array<std::array<std::array<int, 1>, 1>, 1> a6{};
+			static_assert(is_std_array_v<decltype(a6)>);
+		}
+
+		{// constexpr arrays
+			constexpr int a1[1]{};
+			static_assert(is_array_v<decltype(a1)>);
+
+			constexpr int a2[1][1]{};
+			static_assert(is_array_v<decltype(a2)>);
+
+			constexpr int a3[1][1][1]{};
+			static_assert(is_array_v<decltype(a3)>);
+
+			constexpr std::array<int, 1> a4{};
+			static_assert(is_array_v<decltype(a4)>);
+
+			constexpr std::array<std::array<int, 1>, 1> a5{};
+			static_assert(is_array_v<decltype(a5)>);
+
+			constexpr std::array<std::array<std::array<int, 1>, 1>, 1> a6{};
+			static_assert(is_array_v<decltype(a6)>);
+		}
+
+		{// const arrays
+			const int a1[1]{};
+			static_assert(is_array_v<decltype(a1)>);
+
+			const int a2[1][1]{};
+			static_assert(is_array_v<decltype(a2)>);
+
+			const int a3[1][1][1]{};
+			static_assert(is_array_v<decltype(a3)>);
+
+			const std::array<int, 1> a4{};
+			static_assert(is_array_v<decltype(a4)>);
+
+			const std::array<std::array<int, 1>, 1> a5{};
+			static_assert(is_array_v<decltype(a5)>);
+
+			const std::array<std::array<std::array<int, 1>, 1>, 1> a6{};
+			static_assert(is_array_v<decltype(a6)>);
+		}
+
+		{// arrays
+			int a1[1]{};
+			static_assert(is_array_v<decltype(a1)>);
+
+			int a2[1][1]{};
+			static_assert(is_array_v<decltype(a2)>);
+
+			int a3[1][1][1]{};
+			static_assert(is_array_v<decltype(a3)>);
+
+			std::array<int, 1> a4{};
+			static_assert(is_array_v<decltype(a4)>);
+
+			std::array<std::array<int, 1>, 1> a5{};
+			static_assert(is_array_v<decltype(a5)>);
+
+			std::array<std::array<std::array<int, 1>, 1>, 1> a6{};
+			static_assert(is_array_v<decltype(a6)>);
+		}
+
+		{// volatile arrays
+			volatile int a1[1]{};
+			static_assert(is_array_v<decltype(a1)>);
+
+			volatile int a2[1][1]{};
+			static_assert(is_array_v<decltype(a2)>);
+
+			volatile int a3[1][1][1]{};
+			static_assert(is_array_v<decltype(a3)>);
+
+			volatile std::array<int, 1> a4{};
+			static_assert(is_array_v<decltype(a4)>);
+
+			volatile std::array<std::array<int, 1>, 1> a5{};
+			static_assert(is_array_v<decltype(a5)>);
+
+			volatile std::array<std::array<std::array<int, 1>, 1>, 1> a6{};
+			static_assert(is_array_v<decltype(a6)>);
+		}
+
+		{// const volatile arrays
+			const volatile int a1[1]{};
+			static_assert(is_array_v<decltype(a1)>);
+
+			const volatile int a2[1][1]{};
+			static_assert(is_array_v<decltype(a2)>);
+
+			const volatile int a3[1][1][1]{};
+			static_assert(is_array_v<decltype(a3)>);
+
+			const volatile std::array<int, 1> a4{};
+			static_assert(is_array_v<decltype(a4)>);
+
+			const volatile std::array<std::array<int, 1>, 1> a5{};
+			static_assert(is_array_v<decltype(a5)>);
+
+			const volatile std::array<std::array<std::array<int, 1>, 1>, 1> a6{};
+			static_assert(is_array_v<decltype(a6)>);
+		}
+	}
+
+	constexpr void rank_checks()
+	{
+		constexpr int a1[1]{};
+		static_assert(rank_v<decltype(a1)> == 1);
+
+		constexpr int a2[1][1]{};
+		static_assert(rank_v<decltype(a2)> == 2);
+
+		constexpr int a3[1][1][1]{};
+		static_assert(rank_v<decltype(a3)> == 3);
+
+		constexpr std::array<int, 1> a4{};
+		static_assert(rank_v<decltype(a4)> == 1);
+
+		constexpr std::array<std::array<int, 1>, 1> a5{};
+		static_assert(rank_v<decltype(a5)> == 2);
+
+		constexpr std::array<std::array<std::array<int, 1>, 1>, 1> a6{};
+		static_assert(rank_v<decltype(a6)> == 3);
+	}
+
+	constexpr void extent_checks()
+	{
+		constexpr int a1[1]{};
+		static_assert(extent_v<decltype(a1), 0> == 1);
+		static_assert(std::is_same_v<remove_extent_t<decltype(a1)>, const int>);
+		static_assert(std::is_same_v<remove_all_extents_t<decltype(a1)>, const int>);
+		static_assert(std::is_same_v<extents_of_t<decltype(a1)>, std::index_sequence<1>>);
+		static_assert(total_items_v<decltype(a1)> == 1);
+
+		constexpr int a2[11]{};
+		static_assert(extent_v<decltype(a2), 0> == 11);
+		static_assert(std::is_same_v<remove_extent_t<decltype(a2)>, const int>);
+		static_assert(std::is_same_v<remove_all_extents_t<decltype(a2)>, const int>);
+		static_assert(std::is_same_v<extents_of_t<decltype(a2)>, std::index_sequence<11>>);
+		static_assert(total_items_v<decltype(a2)> == 11);
+
+		constexpr int a3[2][4]{};
+		static_assert(extent_v<decltype(a3), 0> == 2);
+		static_assert(extent_v<decltype(a3), 1> == 4);
+		static_assert(std::is_same_v<remove_extent_t<decltype(a3)>, const int[4]>);
+		static_assert(std::is_same_v<remove_all_extents_t<decltype(a3)>, const int>);
+		static_assert(std::is_same_v<extents_of_t<decltype(a3)>, std::index_sequence<2, 4>>);
+		static_assert(total_items_v<decltype(a3)> == 2*4);
+
+		constexpr int a4[9][3][4]{};
+		static_assert(extent_v<decltype(a4), 0> == 9);
+		static_assert(extent_v<decltype(a4), 1> == 3);
+		static_assert(extent_v<decltype(a4), 2> == 4);
+		static_assert(std::is_same_v<remove_extent_t<decltype(a4)>, const int[3][4]>);
+		static_assert(std::is_same_v<remove_all_extents_t<decltype(a4)>, const int>);
+		static_assert(std::is_same_v<extents_of_t<decltype(a4)>, std::index_sequence<9, 3, 4>>);
+		static_assert(total_items_v<decltype(a4)> == 9*3*4);
+
+		constexpr std::array<int, 100> a5{};
+		static_assert(extent_v<decltype(a5), 0> == 100);
+		static_assert(std::is_same_v<remove_extent_t<decltype(a5)>, int>);
+		static_assert(std::is_same_v<remove_all_extents_t<decltype(a5)>, int>);
+		static_assert(std::is_same_v<extents_of_t<decltype(a5)>, std::index_sequence<100>>);
+		static_assert(total_items_v<decltype(a5)> == 100);
+
+		constexpr std::array<std::array<int, 22>, 11> a6{};
+		static_assert(extent_v<decltype(a6), 0> == 11);
+		static_assert(extent_v<decltype(a6), 1> == 22);
+		static_assert(std::is_same_v<remove_extent_t<decltype(a6)>, std::array<int, 22>>);
+		static_assert(std::is_same_v<remove_all_extents_t<decltype(a6)>, int>);
+		static_assert(std::is_same_v<extents_of_t<decltype(a6)>, std::index_sequence<11, 22>>);
+		static_assert(total_items_v<decltype(a6)> == 11*22);
+
+		constexpr std::array<std::array<std::array<int, 100>, 50>, 25> a7{};
+		static_assert(extent_v<decltype(a7), 0> == 25);
+		static_assert(extent_v<decltype(a7), 1> == 50);
+		static_assert(extent_v<decltype(a7), 2> == 100);
+		static_assert(std::is_same_v<remove_extent_t<decltype(a7)>, std::array<std::array<int, 100>, 50>>);
+		static_assert(std::is_same_v<remove_all_extents_t<decltype(a7)>, int>);
+		static_assert(std::is_same_v<extents_of_t<decltype(a7)>, std::index_sequence<25, 50, 100>>);
+		static_assert(total_items_v<decltype(a7)> == 25*50*100);
+	}
+
+	constexpr void indexer_creation()
+	{
+		constexpr int a1[1]{};
+		static_assert(std::is_same_v<indexer_of_t<decltype(a1)>, std::index_sequence<0>>);
+
+		constexpr int a2[10][20]{};
+		static_assert(std::is_same_v<indexer_of_t<decltype(a2)>, std::index_sequence<0, 0>>);
+
+		constexpr int a3[5][6][3]{};
+		static_assert(std::is_same_v<indexer_of_t<decltype(a3)>, std::index_sequence<0, 0, 0>>);
+
+		constexpr std::array<int, 11> a4{};
+		static_assert(std::is_same_v<indexer_of_t<decltype(a4)>, std::index_sequence<0>>);
+
+		constexpr std::array<std::array<int, 5>, 12> a5{};
+		static_assert(std::is_same_v<indexer_of_t<decltype(a5)>, std::index_sequence<0, 0>>);
+
+		constexpr std::array<std::array<std::array<int, 31>, 22>, 13> a6{};
+		static_assert(std::is_same_v<indexer_of_t<decltype(a6)>, std::index_sequence<0, 0, 0>>);
+
+		using s1 = concat_sequence<std::index_sequence<0>>::type;
+		static_assert(std::is_same_v<s1, std::index_sequence<0>>);
+		using s2 = concat_sequence<std::index_sequence<0>, std::index_sequence<1>>::type;
+		static_assert(std::is_same_v<s2, std::index_sequence<0, 1>>);
+		using s3 = concat_sequence<std::index_sequence<0>, std::index_sequence<1, 2>>::type;
+		static_assert(std::is_same_v<s3, std::index_sequence<0, 1, 2>>);
+		using s4 = concat_sequence<std::index_sequence<0>, std::index_sequence<1, 2, 3, 4, 5>>::type;
+		static_assert(std::is_same_v<s4, std::index_sequence<0, 1, 2, 3, 4, 5>>);
+		using s5 = concat_sequence<std::index_sequence<2, 4>, std::index_sequence<6, 8>>::type;
+		static_assert(std::is_same_v<s5, std::index_sequence<2, 4, 6, 8>>);
+
+		static_assert(index_sequence_tail<std::index_sequence<0>>::value == 0);
+		static_assert(index_sequence_tail<std::index_sequence<0, 1>>::value == 1);
+		static_assert(index_sequence_tail<std::index_sequence<0, 1, 2>>::value == 2);
+
+		constexpr int a7[3]{};
+		using extents_a7 = extents_of_t<decltype(a7)>;
+		using indexer0_a7 = indexer_of_t<decltype(a7)>;
+		using indexer1_a7 = next_index<indexer0_a7, extents_a7>::type;
+		using indexer2_a7 = next_index<indexer1_a7, extents_a7>::type;
+		using indexer3_a7 = next_index<indexer2_a7, extents_a7>::type;
+		static_assert(std::is_same_v<indexer0_a7, indexer3_a7>);
+
+		std::cout << diagnostic::demangle<indexer0_a7>() << '\n';
+		std::cout << diagnostic::demangle<indexer1_a7>() << '\n';
+		std::cout << diagnostic::demangle<indexer2_a7>() << '\n';
+		std::cout << diagnostic::demangle<indexer3_a7>() << '\n';
+
+		constexpr int a8[2][3]{};
+		using extents_a8 = extents_of_t<decltype(a8)>;
+		using indexer0_a8 = indexer_of_t<decltype(a8)>;
+		static_assert(std::is_same_v<indexer0_a8, std::index_sequence<0, 0>>);
+		using indexer1_a8 = next_index<indexer0_a8, extents_a8>::type;
+		using indexer2_a8 = next_index<indexer1_a8, extents_a8>::type;
+		using indexer3_a8 = next_index<indexer2_a8, extents_a8>::type;
+		using indexer4_a8 = next_index<indexer3_a8, extents_a8>::type;
+		using indexer5_a8 = next_index<indexer4_a8, extents_a8>::type;
+		using indexer6_a8 = next_index<indexer5_a8, extents_a8>::type;
+		
+		std::cout << diagnostic::demangle<indexer0_a8>() << '\n';
+		std::cout << diagnostic::demangle<indexer1_a8>() << '\n';
+		std::cout << diagnostic::demangle<indexer2_a8>() << '\n';
+		std::cout << diagnostic::demangle<indexer3_a8>() << '\n';
+		std::cout << diagnostic::demangle<indexer4_a8>() << '\n';
+		std::cout << diagnostic::demangle<indexer5_a8>() << '\n';
+		std::cout << diagnostic::demangle<indexer6_a8>() << '\n';
+	}
+}
 
 int main()
 {
-	{
-		static_assert(typeid(array_meta::remove_all_extents_t<std::array<int, 0>>) == typeid(int));
-		static_assert(typeid(array_meta::remove_all_extents_t<std::array<std::array<int, 0>, 0>>) == typeid(int));
-		static_assert(typeid(array_meta::remove_all_extents_t<std::array<std::array<std::array<int, 0>, 0>, 0>>) == typeid(int));
-
-		static_assert(array_meta::rank_v<int> == 0);
-		static_assert(array_meta::rank_v<std::array<int, 0>> == 1);
-		static_assert(array_meta::rank_v<std::array<std::array<int, 0>, 0>> == 2);
-		static_assert(array_meta::rank_v<std::array<std::array<std::array<int, 0>, 0>, 0>> == 3);
-
-		static_assert(array_meta::extent_v<int, 0> == 0);
-		static_assert(array_meta::extent_v<std::array<int, 5>, 0> == 5);
-		static_assert(array_meta::extent_v<std::array<std::array<int, 11>, 22>, 0> == 22);
-		static_assert(array_meta::extent_v<std::array<std::array<int, 11>, 22>, 1> == 11);
-		static_assert(array_meta::extent_v<std::array<std::array<std::array<int, 33>, 44>, 55>, 0> == 55);
-		static_assert(array_meta::extent_v<std::array<std::array<std::array<int, 33>, 44>, 55>, 1> == 44);
-		static_assert(array_meta::extent_v<std::array<std::array<std::array<int, 33>, 44>, 55>, 2> == 33);
-
-		constexpr std::array<std::array<std::array<int, 7>, 8>, 9> a{};
-		static_assert(array_meta::total_items(a) == 7*8*9);
-
-		constexpr auto ext{array_meta::extents_of(a)};
-		static_assert(ext.size() == 3);
-		static_assert(ext[0] == 9);
-		static_assert(ext[1] == 8);
-		static_assert(ext[2] == 7);
-
-		constexpr auto idx{array_meta::indexer(a)};
-		static_assert(idx.size() == 3);
-		static_assert(idx[0] == 0);
-		static_assert(idx[1] == 0);
-		static_assert(idx[2] == 0);
-
-		static_assert(array_meta::offset_of(idx, ext) == 0);
-		static_assert(array_meta::offset_of(array_meta::next_index(idx, ext), ext) == 1);
-	}
-
-	{
-		// test values in the array mimic a base-1 location value in the array for testing clarity.
-		constexpr std::array<std::array<std::array<int, 2>, 3>, 4> a{{
-			// all these extra braces are required (gcc is slightly more forgiving than clang)...
-			// or use a "flat" initializer and compiler flag: -Wno-missing-braces
-			{{{111, 112},
-			  {121, 122},
-			  {131, 132}}},
-
-			{{{211, 212},
-			  {221, 222},
-			  {231, 232}}},
-
-			{{{311, 312},
-			  {321, 322},
-			  {331, 332}}},
-
-			{{{411, 412},
-			  {421, 422},
-			  {431, 432}}},
-		}};
-
-		constexpr auto ext{array_meta::extents_of(a)};
-
-		constexpr auto idx0{array_meta::indexer(a)};
-		static_assert(array_meta::offset_of(idx0, ext) == 0);
-
-		constexpr auto idx1{array_meta::next_index(idx0, ext)};
-		static_assert(array_meta::offset_of(idx1, ext) == 1);
-
-		constexpr auto idx2{array_meta::next_index(idx1, ext)};
-		static_assert(array_meta::offset_of(idx2, ext) == 2);
-
-		constexpr auto idx3{array_meta::next_index(idx2, ext)};
-		static_assert(array_meta::offset_of(idx3, ext) == 3);
-
-		constexpr auto idx4{array_meta::next_index(idx3, ext)};
-		static_assert(array_meta::offset_of(idx4, ext) == 4);
-
-		constexpr auto idx5{array_meta::next_index(idx4, ext)};
-		static_assert(array_meta::offset_of(idx5, ext) == 5);
-
-		constexpr auto idx6{array_meta::next_index(idx5, ext)};
-		static_assert(array_meta::offset_of(idx6, ext) == 6);
-
-		constexpr auto idx7{array_meta::next_index(idx6, ext)};
-		static_assert(array_meta::offset_of(idx7, ext) == 7);
-
-		constexpr auto idx8{array_meta::next_index(idx7, ext)};
-		static_assert(array_meta::offset_of(idx8, ext) == 8);
-
-		constexpr auto idx9{array_meta::next_index(idx8, ext)};
-		static_assert(array_meta::offset_of(idx9, ext) == 9);
-
-		// test roundtrip: offset -> indexer -> offset
-		constexpr auto offset9{array_meta::offset_of(idx9, ext)};
-		constexpr auto rt_idx9{array_meta::indexer_of(offset9, ext)};
-		static_assert(rt_idx9 == idx9);
-
-		static_assert(array_meta::at(a, 0) == 111);
-		static_assert(array_meta::at(a, 1) == 112);
-		static_assert(array_meta::at(a, offset9) == 222);
-		static_assert(array_meta::at(a, rt_idx9) == 222);
-		static_assert(array_meta::at(a, idx6) == 211);
-
-		// explicit indexer
-		constexpr array_meta::indexer_t<3> ex_idx{3, 2, 1}; // base 0 index...
-		static_assert(array_meta::at(a, ex_idx) == 432);    // but test value is base 1, so index 3,2,1 -> 432
-	}
+	test::type_checks();
+	test::rank_checks();
+	test::extent_checks();
+	test::indexer_creation();
 
 	return 0;
 }
-// reset && make && build/array-picker && printf '\n###\n' || printf '\nfailed\n'

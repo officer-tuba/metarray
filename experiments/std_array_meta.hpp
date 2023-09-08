@@ -18,7 +18,7 @@ template <typename T>
 inline constexpr auto is_std_array_v{is_std_array<T>::value};
 
 template <typename T>
-concept std_array = is_std_array_v<T>;
+concept std_array = is_std_array_v<std::remove_cv_t<T>>;
 
 
 // --- std::array ranks --------------------------------------------------------------------------------------------------------------------
@@ -58,6 +58,19 @@ struct remove_all_extents<T> {
 template <std_array T>
 using remove_all_extents_t = typename remove_all_extents<T>::type;
 
+template <typename...>
+struct total_items;
+
+template <typename T>
+struct total_items<T> {
+	inline static constexpr std::size_t value = 1;
+};
+
+template <typename T>
+requires std_array<T>
+struct total_items<T> {
+	inline static constexpr auto value = std::tuple_size_v<T> * total_items<typename T::value_type>::value;
+};
 
 // --- type aliases ------------------------------------------------------------------------------------------------------------------------
 template <std::size_t S>
@@ -110,17 +123,6 @@ constexpr void fill_indexer(std::size_t offset, indexer_t<S>& indexer, const ind
 }
 
 template <std_array P, std::size_t I, std_array T>
-constexpr auto at(const T& arr, const indexer_t<rank_v<P>>& indexer)
-{
-	if constexpr (rank_v<T> == 1) {
-		return arr.at(indexer[I]);
-	}
-	else {
-		return at<P, I + 1>(arr.at(indexer[I]), indexer);
-	}
-}
-
-template <std_array P, std::size_t I, std_array T>
 constexpr auto at(T& arr, const indexer_t<rank_v<P>>& indexer)
 {
 	if constexpr (rank_v<T> == 1) {
@@ -142,8 +144,9 @@ constexpr auto extents_of(const T& arr)
 	return ranks;
 }
 
-template <std_array T>
-constexpr auto indexer(const T&)
+template <typename T>
+requires std_array<T>
+constexpr auto indexer()
 {
 	return indexer_t<rank_v<T>>{0};
 }
@@ -163,39 +166,43 @@ constexpr auto indexer_of(std::size_t offset, const indexer_t<S>& extents)
 }
 
 template <std::size_t S>
-constexpr auto next_index(const indexer_t<S>& indexer, const indexer_t<S>& extents)
-{// works like incrementing a value by 1, but each index ("digit") is a different base (as specified by extents).
+constexpr auto next_index(const indexer_t<S>& indexer, const indexer_t<S>& extents, std::size_t offset = 1)
+{// works like incrementing a value by offset, but each index ("digit") is a different base (as specified by extents).
+//TODO: doesn't handle wrapping yet.
 	bool carry;
-	std::size_t extent{extents.size() - 1};
 	auto next{indexer};
 
 	do {
-		carry = false;
+		std::size_t extent{extents.size() - 1};
+		do {
+			carry = false;
 
-		if (++next[extent] == extents[extent]) {
-			next[extent] = 0;
+			if (++next[extent] == extents[extent]) {
+				next[extent] = 0;
 
-			if (extent > 0) {
-				--extent;
+				if (extent > 0) {
+					--extent;
+				}
+				else {
+					return next;
+				}
+
+				carry = true;
 			}
-			else {
-				return next;
-			}
-
-			carry = true;
-		}
-	} while(carry);
+		} while(carry);
+	} while (--offset > 0);
 
 	return next;
 }
 
-template <std_array T>
-constexpr std::size_t total_items(const T& arr)
+template <std::size_t S>
+constexpr auto next_stride(const indexer_t<S>& indexer, const indexer_t<S>& extents)
 {
-	const auto exts{extents_of(arr)};
-	return std::accumulate(exts.cbegin(), exts.cend(), std::size_t{1},
-		[](auto t1, auto t2) { return t1 * t2; } );
+	return next_index(indexer, extents, std::get<S - 1>(extents));
 }
+
+template <std_array T>
+inline constexpr auto total_items_v = total_items<T>::value;
 
 template <std_array T>
 constexpr auto at(const T& arr, std::size_t offset)

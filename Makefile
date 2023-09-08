@@ -48,7 +48,7 @@ INC_QUOTE := $(addprefix -iquote,$(MAIN_INC_DIR))
 
 # default to c++23 language standard
 # override at the command line like this: make CXXSTD=c++26
-CXXSTD ?= c++26
+CXXSTD ?= c++23
 
 # release rule (or build target if you prefer) compiles with -O3 and -ggdb0 by default, otherwise the deaults are -O0 and -ggdb3.
 # override at the command line like this: make CXXOPT=2 CXXDBG=1
