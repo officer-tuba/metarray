@@ -406,7 +406,7 @@ namespace test {
 			using indexer6_a2 = next_indexer<indexer5_a2>::type;
 			static_assert(std::is_same_v<indexer6_a2, std::pair<std::index_sequence<0, 0>, std::index_sequence<2, 3>>>);
 
-			constexpr std::array<std::array<std::array<int, 2>, 3>, 2> a3[2][3][2]{};
+			constexpr std::array<std::array<std::array<int, 2>, 3>, 2> a3{};
 			using indexer_0_a3 = indexer_of_t<decltype(a3)>;
 			static_assert(std::is_same_v<indexer_0_a3, std::pair<std::index_sequence<0, 0, 0>, std::index_sequence<2, 3, 2>>>);
 			using indexer_1_a3 = next_indexer<indexer_0_a3>::type;
