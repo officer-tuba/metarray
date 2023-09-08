@@ -175,6 +175,21 @@ struct concat_sequence<std::index_sequence<Heads...>, std::index_sequence<Tails.
 };
 
 template <typename...>
+struct index_sequence_head;
+
+// template <std::size_t Head>
+// struct index_sequence_head<std::index_sequence<Head>> {
+//     inline static constexpr auto value{Head};
+//     using type = std::index_sequence<value>;
+// };
+
+template <std::size_t Head, std::size_t...Tail>
+struct index_sequence_head<std::index_sequence<Head, Tail...>> {
+    inline static constexpr auto value{Head};
+    using type = std::index_sequence<Head>;
+};
+
+template <typename...>
 struct index_sequence_tail;
 
 template <std::size_t Tail>
@@ -190,23 +205,36 @@ struct index_sequence_tail<std::index_sequence<Head, Tail...>> {
 };
 
 template <typename...>
-struct index_sequence_lead;
+struct index_sequence_leading;
 
 template <std::size_t S>
-struct index_sequence_lead<std::index_sequence<S>> {
+struct index_sequence_leading<std::index_sequence<S>> {
     using type = std::index_sequence<>;
 };
 
 template <std::size_t Head, std::size_t Tail>
-struct index_sequence_lead<std::index_sequence<Head, Tail>> {
+struct index_sequence_leading<std::index_sequence<Head, Tail>> {
     using type = std::index_sequence<Head>;
 };
 
 template <std::size_t Head, std::size_t...Tail>
-struct index_sequence_lead<std::index_sequence<Head, Tail...>> {
+struct index_sequence_leading<std::index_sequence<Head, Tail...>> {
     using type = typename concat_sequence<
         std::index_sequence<Head>,
-        typename index_sequence_lead<std::index_sequence<Tail...>>::type>::type;
+        typename index_sequence_leading<std::index_sequence<Tail...>>::type>::type;
+};
+
+template <typename...>
+struct index_sequence_trailing;
+
+template <std::size_t S>
+struct index_sequence_trailing<std::index_sequence<S>> {
+    using type = std::index_sequence<S>;
+};
+
+template <std::size_t Head, std::size_t...Tail>
+struct index_sequence_trailing<std::index_sequence<Head, Tail...>> {
+    using type = std::index_sequence<Tail...>;
 };
 
 template <typename...>
@@ -224,27 +252,52 @@ struct next_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es
 private:
     inline static constexpr bool carries{
         next_indexer<std::pair<
-            typename index_sequence_tail<std::index_sequence<Is...>>::type,
-            typename index_sequence_tail<std::index_sequence<Es...>>::type>
-        >::carries
+            typename index_sequence_head<std::index_sequence<Is...>>::type,
+            typename index_sequence_head<std::index_sequence<Es...>>::type
+        >>::carries
     };
+
+    // indices reversed
+    // inline static constexpr bool carries{
+    //     next_indexer<std::pair<
+    //         typename index_sequence_tail<std::index_sequence<Is...>>::type,
+    //         typename index_sequence_tail<std::index_sequence<Es...>>::type
+    //     >>::carries
+    // };
 
 public:
     using type = std::pair<std::conditional_t<carries,
-        // if the tail index carries, then type is "next<lead>", 0
+        // if the head index carries, then type is 0, "next<trailing>"
         typename concat_sequence<
+            std::index_sequence<0>,
             typename next_indexer<std::pair<
-                typename index_sequence_lead<std::index_sequence<Is...>>::type,
-                typename index_sequence_lead<std::index_sequence<Es...>>::type>
-            >::type::first_type,
-            std::index_sequence<0>
+                typename index_sequence_trailing<std::index_sequence<Is...>>::type,
+                typename index_sequence_trailing<std::index_sequence<Es...>>::type
+            >>::type::first_type
         >::type,
-        // if the tail index does not carry, then type is lead, tail + 1
+        // if the head index does not carry, then type is head + 1, trailing
         typename concat_sequence<
-            typename index_sequence_lead<std::index_sequence<Is...>>::type,
-            std::index_sequence<index_sequence_tail<std::index_sequence<Is...>>::value + 1>
+            std::index_sequence<index_sequence_head<std::index_sequence<Is...>>::value + 1>,
+            typename index_sequence_trailing<std::index_sequence<Is...>>::type
         >::type
     >, std::index_sequence<Es...>>;
+
+    // indices reversed
+    // using type = std::pair<std::conditional_t<carries,
+    //     // if the tail index carries, then type is "next<leading>", 0
+    //     typename concat_sequence<
+    //         typename next_indexer<std::pair<
+    //             typename index_sequence_leading<std::index_sequence<Is...>>::type,
+    //             typename index_sequence_leading<std::index_sequence<Es...>>::type
+    //         >>::type::first_type,
+    //         std::index_sequence<0>
+    //     >::type,
+    //     // if the tail index does not carry, then type is leading, tail + 1
+    //     typename concat_sequence<
+    //         typename index_sequence_leading<std::index_sequence<Is...>>::type,
+    //         std::index_sequence<index_sequence_tail<std::index_sequence<Is...>>::value + 1>
+    //     >::type
+    // >, std::index_sequence<Es...>>;
 };
 
 }//array_meta
