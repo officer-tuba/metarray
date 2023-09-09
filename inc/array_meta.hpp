@@ -171,22 +171,10 @@ using last_indexer_of_t = last_indexer_of<T>::type;
 template <array T>
 struct indexer_of<T> {
     using type = indexer_of<T, std::make_index_sequence<rank_v<T>>>::type;
-
-    template <typename Idx>
-    inline static constexpr bool is_first_indexer{std::is_same_v<Idx, type>};
-
-    template <typename Idx>
-    inline static constexpr bool is_last_indexer{std::is_same_v<typename Idx::first_type, last_indexer_of_t<T>>};
 };
 
 template <array T>
 using indexer_of_t = indexer_of<T>::type;
-
-template <array T, typename Idx>
-inline constexpr bool is_first_indexer_v{indexer_of<T>::template is_first_indexer<Idx>};
-
-template <array T, typename Idx>
-inline constexpr bool is_last_indexer_v{indexer_of<T>::template is_last_indexer<Idx>};
 
 template <typename...>
 struct concat_sequence;
@@ -257,6 +245,30 @@ template <std::size_t Head, std::size_t...Tail>
 struct index_sequence_trailing<std::index_sequence<Head, Tail...>> {
     using type = std::index_sequence<Tail...>;
 };
+
+template <typename...>
+struct is_first_indexer;
+
+template <std::size_t...Is, std::size_t...Es>
+requires (sizeof...(Is) == sizeof...(Es))
+struct is_first_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
+    inline static constexpr bool value{std::is_same_v<std::index_sequence<Is...>, std::index_sequence<(Is * 0)...>>};
+};
+
+template <typename T>
+inline constexpr bool is_first_indexer_v{is_first_indexer<T>::value};
+
+template <typename...>
+struct is_last_indexer;
+
+template <std::size_t...Is, std::size_t...Es>
+requires (sizeof...(Is) == sizeof...(Es))
+struct is_last_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
+    inline static constexpr bool value{std::is_same_v<std::index_sequence<Is...>, std::index_sequence<(Es - 1)...>>};
+};
+
+template <typename T>
+inline constexpr bool is_last_indexer_v{is_last_indexer<T>::value};
 
 template <typename...>
 struct next_indexer;
