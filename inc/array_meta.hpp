@@ -157,7 +157,7 @@ template <typename...>
 struct last_indexer_of;
 template <array T, std::size_t...Is>
 struct last_indexer_of<T, std::index_sequence<Is...>> {
-    using type = std::index_sequence<(extent_v<T, Is> - 1)...>;
+    using type = std::pair<std::index_sequence<(extent_v<T, Is> - 1)...>, extents_of_t<T>>;
 };
 
 template <array T>
@@ -270,6 +270,8 @@ struct is_last_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence
 template <typename T>
 inline constexpr bool is_last_indexer_v{is_last_indexer<T>::value};
 
+//TODO: need a pev_indexer?
+//TODO: how to create next_indexer_t alias (tricky... impossible?)
 template <typename...>
 struct next_indexer;
 
@@ -332,5 +334,43 @@ public:
     //     >::type
     // >, std::index_sequence<Es...>>;
 };
+
+namespace detail {
+
+template <typename...>
+struct get_impl;
+
+template <array A, std::size_t I, std::size_t E>
+struct get_impl<A, std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
+    static constexpr auto& value(A& array)
+    {
+        return array[I];
+    }
+};
+
+template <array A, std::size_t...Is, std::size_t...Es>
+struct get_impl<A, std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
+    static constexpr auto& value(A& array)
+    {
+        return get_impl<remove_extent_t<A>,
+            std::pair<
+                typename index_sequence_trailing<std::index_sequence<Is...>>::type,
+                typename index_sequence_trailing<std::index_sequence<Es...>>::type
+            >
+        >::value(array[head_index]);
+    }
+
+private:
+    static constexpr auto head_index{index_sequence_head<std::index_sequence<Is...>>::value};
+};
+
+}//detail
+
+//TODO: concept(s) and/or requires to validate Idx type
+template <typename Idx, array A>
+constexpr auto& get(A& array)
+{
+    return detail::get_impl<A, Idx>::value(array);
+}
 
 }//array_meta
