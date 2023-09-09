@@ -78,6 +78,11 @@ CXXFLAGS = $(if $(findstring 0,$(CXXOPT)),-U_FORTIFY_SOURCE,-D_FORTIFY_SOURCE) -
 # flags that assist in creation of the dependency graph files.
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEP_CACHE_DIR)/$(*F).d
 
+# there appears to be a gcc bug that occasionally causes the .d file to be written to disk *after* the compilation target.
+# if the .d file is newer than the compilation target then it will rebuild when it doesn't need to. these mechanisms will set the .d file 
+# time stamp to match the associated compilation target
+FIX_DEP_STAMP = @touch -r $@ $(DEP_CACHE_DIR)/$(basename $(notdir $@)).d
+
 # supports "audit" rule. expands a space delimited list to a newline delimited list.
 EXPAND_LINES := sed 's/ /\n/g'
 # for "audit" rule - creates a file containing a list of dependencies. note that this differs from the dependency cache files - this will
@@ -95,15 +100,18 @@ ifeq ($(wildcard $(MAKE_OPTS_FILE)),)
     $(shell mkdir -p $(BLD_DIR) && touch -f $(MAKE_OPTS_FILE))
 endif
 
-# trigger a full rebuild if any of the settings/goals differ from the last build, but exclude diagnostic goal as a triggers.
-ifneq ($(MAKECMDGOALS),diagnostic)
-    PREV_OPTS = $(file <$(MAKE_OPTS_FILE))
-    CURR_OPTS = $(MAKECMDGOALS) $(CXX) -std=$(CXXSTD) -O$(CXXOPT) -ggdb$(CXXDBG) $(STRIP_BINS)
-endif
+# we want to trigger a full rebuild if any of the settings/goals differ from the previous build.
+# PREV_OPTS contains the settings loaded from MAKE_OPTS_FILE (previous build, if any).
+PREV_OPTS = $(file <$(MAKE_OPTS_FILE))
+# CURR_OPTS are the settings of the currently running make.
+CURR_OPTS = $(filter-out run .DEFAULT debug all diagnostic,$(MAKECMDGOALS)) $(CXX) -std=$(CXXSTD) -O$(CXXOPT) -ggdb$(CXXDBG) $(STRIP_BINS)
 
-# update the MAKE_OPTS_FILE with any differences
-ifneq ($(PREV_OPTS),$(CURR_OPTS))
-    $(file >$(MAKE_OPTS_FILE),$(CURR_OPTS))
+# update the MAKE_OPTS_FILE if PREV_OPTS and CURR_OPTS differ, but skip this step if we're running a diagnostic.
+# this mechanism won't work properly if you combine diagnostic with any of the other goals.
+ifneq ($(findstring diagnostic,$(MAKECMDGOALS)),diagnostic)
+    ifneq ($(PREV_OPTS),$(CURR_OPTS))
+        $(file >$(MAKE_OPTS_FILE),$(CURR_OPTS))
+    endif
 endif
 
 all: $(MAIN_PROGRAM)
@@ -124,6 +132,10 @@ clean:
 purge:
 	rm -R $(BLD_DIR)
 
+# run rule will ensure build is up to date and run the $(MAIN_PROGRAM)
+run: all
+	$(MAIN_PROGRAM)
+
 # second expansion is required (see uses of $$). this tells make that it needs to make 2 passes to fully resolve some variable expansions.
 .SECONDEXPANSION:
 
@@ -131,7 +143,7 @@ purge:
 .DELETE_ON_ERROR:
 
 # these rules aren't associated a specific file or dir
-.PHONY: all debug release audit clean purge diagnostic
+.PHONY: all debug release audit clean purge diagnostic run
 
 # idiomatic directory creation rule - try to avoid these except when needed for PHONY goals (see also MKDIR definition above).
 $(DEP_CACHE_DIR): ; @mkdir -p $@
@@ -147,6 +159,7 @@ $(MAIN_OBJS): .EXTRA_PREREQS = $(THIS) $(MAKE_OPTS_FILE)
 $(MAIN_OBJ_DIR)/%.o: $(DEP_CACHE_DIR)/%.d | $(MKDIR) $(DEP_CACHE_DIR)
 	$(EXPORT_DEPENDENCIES)
 	$(CXX) $(DEPFLAGS) $(CPPFLAGS) $(CXXFLAGS) -c $(MAIN_SRC_DIR)/$(*F).cpp -o $@
+	$(FIX_DEP_STAMP)
 
 # to support the "audit" goal - this creates a master list of *all* dependencies for the entire build - sorted and duplicates removed.
 $(BLD_DIR)/audit.list: all
@@ -154,7 +167,7 @@ $(BLD_DIR)/audit.list: all
 
 # this rule is just a link step - takes all main objs and links them to produce the specified main program.
 $(MAIN_PROGRAM): $(MAIN_OBJS) | $(MKDIR)
-	$(CXX) $(if $(findstring 1,$(STRIP_BINS)),-s) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+	$(CXX) $(if $(findstring 1,$(STRIP_BINS)),-s) $^ -o $@ $(LDFLAGS) $(LDLIBS)
 
 $(MAIN_SRC_DEPS): ;
 include $(wildcard $(MAIN_SRC_DEPS))
@@ -180,6 +193,7 @@ diagnostic:
 	@printf '$(TERM_HEADER)build settings$(TERM_RESET)\n'
 	@printf '$(TERM_BLUE)default goal: $(TERM_RESET)$(.DEFAULT_GOAL)\n'
 	@printf '$(TERM_BLUE)MAKEFLAGS: $(TERM_RESET)$(MAKEFLAGS)\n'
+	@printf '$(TERM_BLUE)MAKECMDGOALS: $(TERM_RESET)$(MAKECMDGOALS)\n'
 	@printf '$(TERM_BLUE)CXXSTD [$(origin CXXSTD)]: $(TERM_RESET)$(CXXSTD)\n'
 	@printf '$(TERM_BLUE)CXXOPT [$(origin CXXOPT)]: $(TERM_RESET)$(CXXOPT)\n'
 	@printf '$(TERM_BLUE)CXXDBG [$(origin CXXDBG)]: $(TERM_RESET)$(CXXDBG)\n'
