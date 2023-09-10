@@ -561,7 +561,7 @@ namespace test {
 			using ext_a = extents_of_t<decltype(a)>;
 			using idx0 = indexer_from_offset_t<0, ext_a>;
 			static_assert(offset_from_indexer_v<idx0> == 0);
-			
+
 			static_assert(get<idx0>(a) == 10);
 			using idx1 = indexer_from_offset_t<1, ext_a>;
 			static_assert(offset_from_indexer_v<idx1> == 1);

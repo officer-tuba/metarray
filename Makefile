@@ -79,7 +79,7 @@ CXXFLAGS = $(if $(findstring 0,$(CXXOPT)),-U_FORTIFY_SOURCE,-D_FORTIFY_SOURCE) -
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEP_CACHE_DIR)/$(*F).d
 
 # there appears to be a gcc bug that occasionally causes the .d file to be written to disk *after* the compilation target.
-# if the .d file is newer than the compilation target then it will rebuild when it doesn't need to. these mechanisms will set the .d file 
+# if the .d file is newer than the compilation target then it will rebuild when it doesn't need to. these mechanisms will set the .d file
 # time stamp to match the associated compilation target
 FIX_DEP_STAMP = @touch -r $@ $(DEP_CACHE_DIR)/$(basename $(notdir $@)).d
 
