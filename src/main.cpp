@@ -305,15 +305,15 @@ namespace test {
 		constexpr std::array<std::array<std::array<int, 31>, 22>, 13> a6{};
 		static_assert(std::is_same_v<indexer_of_t<decltype(a6)>, std::pair<std::index_sequence<0, 0, 0>, std::index_sequence<13, 22, 31>>>);
 
-		using s1 = concat_sequence<std::index_sequence<0>>::type;
+		using s1 = concat_sequence_t<std::index_sequence<0>>;
 		static_assert(std::is_same_v<s1, std::index_sequence<0>>);
-		using s2 = concat_sequence<std::index_sequence<0>, std::index_sequence<1>>::type;
+		using s2 = concat_sequence_t<std::index_sequence<0>, std::index_sequence<1>>;
 		static_assert(std::is_same_v<s2, std::index_sequence<0, 1>>);
-		using s3 = concat_sequence<std::index_sequence<0>, std::index_sequence<1, 2>>::type;
+		using s3 = concat_sequence_t<std::index_sequence<0>, std::index_sequence<1, 2>>;
 		static_assert(std::is_same_v<s3, std::index_sequence<0, 1, 2>>);
-		using s4 = concat_sequence<std::index_sequence<0>, std::index_sequence<1, 2, 3, 4, 5>>::type;
+		using s4 = concat_sequence_t<std::index_sequence<0>, std::index_sequence<1, 2, 3, 4, 5>>;
 		static_assert(std::is_same_v<s4, std::index_sequence<0, 1, 2, 3, 4, 5>>);
-		using s5 = concat_sequence<std::index_sequence<2, 4>, std::index_sequence<6, 8>>::type;
+		using s5 = concat_sequence_t<std::index_sequence<2, 4>, std::index_sequence<6, 8>>;
 		static_assert(std::is_same_v<s5, std::index_sequence<2, 4, 6, 8>>);
 
 		static_assert(index_sequence_tail<std::index_sequence<0>>::value == 0);
@@ -328,60 +328,60 @@ namespace test {
 			using indexer0_a1 = indexer_of_t<decltype(a1)>;
 			static_assert(is_first_indexer_v<indexer0_a1>);
 			static_assert(std::is_same_v<indexer0_a1, std::pair<std::index_sequence<0>, std::index_sequence<3>>>);
-			using indexer1_a1 = next_indexer<indexer0_a1>::type;
+			using indexer1_a1 = next_indexer_t<indexer0_a1>;
 			static_assert(std::is_same_v<indexer1_a1, std::pair<std::index_sequence<1>, std::index_sequence<3>>>);
-			using indexer2_a1 = next_indexer<indexer1_a1>::type;
+			using indexer2_a1 = next_indexer_t<indexer1_a1>;
 			static_assert(is_last_indexer_v<indexer2_a1>);
 			static_assert(std::is_same_v<indexer2_a1, std::pair<std::index_sequence<2>, std::index_sequence<3>>>);
-			using indexer3_a1 = next_indexer<indexer2_a1>::type;
+			using indexer3_a1 = next_indexer_t<indexer2_a1>;
 			static_assert(std::is_same_v<indexer3_a1, std::pair<std::index_sequence<0>, std::index_sequence<3>>>);
 
 			constexpr int a2[2][3]{};
 			using indexer0_a2 = indexer_of_t<decltype(a2)>;
 			static_assert(is_first_indexer_v<indexer0_a2>);
 			static_assert(std::is_same_v<indexer0_a2, std::pair<std::index_sequence<0, 0>, std::index_sequence<2, 3>>>);
-			using indexer1_a2 = next_indexer<indexer0_a2>::type;
+			using indexer1_a2 = next_indexer_t<indexer0_a2>;
 			static_assert(std::is_same_v<indexer1_a2, std::pair<std::index_sequence<1, 0>, std::index_sequence<2, 3>>>);
-			using indexer2_a2 = next_indexer<indexer1_a2>::type;
+			using indexer2_a2 = next_indexer_t<indexer1_a2>;
 			static_assert(std::is_same_v<indexer2_a2, std::pair<std::index_sequence<0, 1>, std::index_sequence<2, 3>>>);
-			using indexer3_a2 = next_indexer<indexer2_a2>::type;
+			using indexer3_a2 = next_indexer_t<indexer2_a2>;
 			static_assert(std::is_same_v<indexer3_a2, std::pair<std::index_sequence<1, 1>, std::index_sequence<2, 3>>>);
-			using indexer4_a2 = next_indexer<indexer3_a2>::type;
+			using indexer4_a2 = next_indexer_t<indexer3_a2>;
 			static_assert(std::is_same_v<indexer4_a2, std::pair<std::index_sequence<0, 2>, std::index_sequence<2, 3>>>);
-			using indexer5_a2 = next_indexer<indexer4_a2>::type;
+			using indexer5_a2 = next_indexer_t<indexer4_a2>;
 			static_assert(is_last_indexer_v<indexer5_a2>);
 			static_assert(std::is_same_v<indexer5_a2, std::pair<std::index_sequence<1, 2>, std::index_sequence<2, 3>>>);
-			using indexer6_a2 = next_indexer<indexer5_a2>::type;
+			using indexer6_a2 = next_indexer_t<indexer5_a2>;
 			static_assert(std::is_same_v<indexer6_a2, std::pair<std::index_sequence<0, 0>, std::index_sequence<2, 3>>>);
 
 			constexpr int a3[2][3][2]{};
 			using indexer_0_a3 = indexer_of_t<decltype(a3)>;
 			static_assert(is_first_indexer_v<indexer_0_a3>);
 			static_assert(std::is_same_v<indexer_0_a3, std::pair<std::index_sequence<0, 0, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_1_a3 = next_indexer<indexer_0_a3>::type;
+			using indexer_1_a3 = next_indexer_t<indexer_0_a3>;
 			static_assert(std::is_same_v<indexer_1_a3, std::pair<std::index_sequence<1, 0, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_2_a3 = next_indexer<indexer_1_a3>::type;
+			using indexer_2_a3 = next_indexer_t<indexer_1_a3>;
 			static_assert(std::is_same_v<indexer_2_a3, std::pair<std::index_sequence<0, 1, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_3_a3 = next_indexer<indexer_2_a3>::type;
+			using indexer_3_a3 = next_indexer_t<indexer_2_a3>;
 			static_assert(std::is_same_v<indexer_3_a3, std::pair<std::index_sequence<1, 1, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_4_a3 = next_indexer<indexer_3_a3>::type;
+			using indexer_4_a3 = next_indexer_t<indexer_3_a3>;
 			static_assert(std::is_same_v<indexer_4_a3, std::pair<std::index_sequence<0, 2, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_5_a3 = next_indexer<indexer_4_a3>::type;
+			using indexer_5_a3 = next_indexer_t<indexer_4_a3>;
 			static_assert(std::is_same_v<indexer_5_a3, std::pair<std::index_sequence<1, 2, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_6_a3 = next_indexer<indexer_5_a3>::type;
+			using indexer_6_a3 = next_indexer_t<indexer_5_a3>;
 			static_assert(std::is_same_v<indexer_6_a3, std::pair<std::index_sequence<0, 0, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer_7_a3 = next_indexer<indexer_6_a3>::type;
+			using indexer_7_a3 = next_indexer_t<indexer_6_a3>;
 			static_assert(std::is_same_v<indexer_7_a3, std::pair<std::index_sequence<1, 0, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer_8_a3 = next_indexer<indexer_7_a3>::type;
+			using indexer_8_a3 = next_indexer_t<indexer_7_a3>;
 			static_assert(std::is_same_v<indexer_8_a3, std::pair<std::index_sequence<0, 1, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer_9_a3 = next_indexer<indexer_8_a3>::type;
+			using indexer_9_a3 = next_indexer_t<indexer_8_a3>;
 			static_assert(std::is_same_v<indexer_9_a3, std::pair<std::index_sequence<1, 1, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer10_a3 = next_indexer<indexer_9_a3>::type;
+			using indexer10_a3 = next_indexer_t<indexer_9_a3>;
 			static_assert(std::is_same_v<indexer10_a3, std::pair<std::index_sequence<0, 2, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer11_a3 = next_indexer<indexer10_a3>::type;
+			using indexer11_a3 = next_indexer_t<indexer10_a3>;
 			static_assert(is_last_indexer_v<indexer11_a3>);
 			static_assert(std::is_same_v<indexer11_a3, std::pair<std::index_sequence<1, 2, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer12_a3 = next_indexer<indexer11_a3>::type;
+			using indexer12_a3 = next_indexer_t<indexer11_a3>;
 			static_assert(std::is_same_v<indexer12_a3, std::pair<std::index_sequence<0, 0, 0>, std::index_sequence<2, 3, 2>>>);
 		}
 
@@ -390,60 +390,60 @@ namespace test {
 			using indexer0_a1 = indexer_of_t<decltype(a1)>;
 			static_assert(is_first_indexer_v<indexer0_a1>);
 			static_assert(std::is_same_v<indexer0_a1, std::pair<std::index_sequence<0>, std::index_sequence<3>>>);
-			using indexer1_a1 = next_indexer<indexer0_a1>::type;
+			using indexer1_a1 = next_indexer_t<indexer0_a1>;
 			static_assert(std::is_same_v<indexer1_a1, std::pair<std::index_sequence<1>, std::index_sequence<3>>>);
-			using indexer2_a1 = next_indexer<indexer1_a1>::type;
+			using indexer2_a1 = next_indexer_t<indexer1_a1>;
 			static_assert(is_last_indexer_v<indexer2_a1>);
 			static_assert(std::is_same_v<indexer2_a1, std::pair<std::index_sequence<2>, std::index_sequence<3>>>);
-			using indexer3_a1 = next_indexer<indexer2_a1>::type;
+			using indexer3_a1 = next_indexer_t<indexer2_a1>;
 			static_assert(std::is_same_v<indexer3_a1, std::pair<std::index_sequence<0>, std::index_sequence<3>>>);
 
 			constexpr std::array<std::array<int, 3>, 2> a2{};
 			using indexer0_a2 = indexer_of_t<decltype(a2)>;
 			static_assert(is_first_indexer_v<indexer0_a2>);
 			static_assert(std::is_same_v<indexer0_a2, std::pair<std::index_sequence<0, 0>, std::index_sequence<2, 3>>>);
-			using indexer1_a2 = next_indexer<indexer0_a2>::type;
+			using indexer1_a2 = next_indexer_t<indexer0_a2>;
 			static_assert(std::is_same_v<indexer1_a2, std::pair<std::index_sequence<1, 0>, std::index_sequence<2, 3>>>);
-			using indexer2_a2 = next_indexer<indexer1_a2>::type;
+			using indexer2_a2 = next_indexer_t<indexer1_a2>;
 			static_assert(std::is_same_v<indexer2_a2, std::pair<std::index_sequence<0, 1>, std::index_sequence<2, 3>>>);
-			using indexer3_a2 = next_indexer<indexer2_a2>::type;
+			using indexer3_a2 = next_indexer_t<indexer2_a2>;
 			static_assert(std::is_same_v<indexer3_a2, std::pair<std::index_sequence<1, 1>, std::index_sequence<2, 3>>>);
-			using indexer4_a2 = next_indexer<indexer3_a2>::type;
+			using indexer4_a2 = next_indexer_t<indexer3_a2>;
 			static_assert(std::is_same_v<indexer4_a2, std::pair<std::index_sequence<0, 2>, std::index_sequence<2, 3>>>);
-			using indexer5_a2 = next_indexer<indexer4_a2>::type;
+			using indexer5_a2 = next_indexer_t<indexer4_a2>;
 			static_assert(is_last_indexer_v<indexer5_a2>);
 			static_assert(std::is_same_v<indexer5_a2, std::pair<std::index_sequence<1, 2>, std::index_sequence<2, 3>>>);
-			using indexer6_a2 = next_indexer<indexer5_a2>::type;
+			using indexer6_a2 = next_indexer_t<indexer5_a2>;
 			static_assert(std::is_same_v<indexer6_a2, std::pair<std::index_sequence<0, 0>, std::index_sequence<2, 3>>>);
 
 			constexpr std::array<std::array<std::array<int, 2>, 3>, 2> a3{};
 			using indexer_0_a3 = indexer_of_t<decltype(a3)>;
 			static_assert(is_first_indexer_v<indexer_0_a3>);
 			static_assert(std::is_same_v<indexer_0_a3, std::pair<std::index_sequence<0, 0, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_1_a3 = next_indexer<indexer_0_a3>::type;
+			using indexer_1_a3 = next_indexer_t<indexer_0_a3>;
 			static_assert(std::is_same_v<indexer_1_a3, std::pair<std::index_sequence<1, 0, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_2_a3 = next_indexer<indexer_1_a3>::type;
+			using indexer_2_a3 = next_indexer_t<indexer_1_a3>;
 			static_assert(std::is_same_v<indexer_2_a3, std::pair<std::index_sequence<0, 1, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_3_a3 = next_indexer<indexer_2_a3>::type;
+			using indexer_3_a3 = next_indexer_t<indexer_2_a3>;
 			static_assert(std::is_same_v<indexer_3_a3, std::pair<std::index_sequence<1, 1, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_4_a3 = next_indexer<indexer_3_a3>::type;
+			using indexer_4_a3 = next_indexer_t<indexer_3_a3>;
 			static_assert(std::is_same_v<indexer_4_a3, std::pair<std::index_sequence<0, 2, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_5_a3 = next_indexer<indexer_4_a3>::type;
+			using indexer_5_a3 = next_indexer_t<indexer_4_a3>;
 			static_assert(std::is_same_v<indexer_5_a3, std::pair<std::index_sequence<1, 2, 0>, std::index_sequence<2, 3, 2>>>);
-			using indexer_6_a3 = next_indexer<indexer_5_a3>::type;
+			using indexer_6_a3 = next_indexer_t<indexer_5_a3>;
 			static_assert(std::is_same_v<indexer_6_a3, std::pair<std::index_sequence<0, 0, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer_7_a3 = next_indexer<indexer_6_a3>::type;
+			using indexer_7_a3 = next_indexer_t<indexer_6_a3>;
 			static_assert(std::is_same_v<indexer_7_a3, std::pair<std::index_sequence<1, 0, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer_8_a3 = next_indexer<indexer_7_a3>::type;
+			using indexer_8_a3 = next_indexer_t<indexer_7_a3>;
 			static_assert(std::is_same_v<indexer_8_a3, std::pair<std::index_sequence<0, 1, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer_9_a3 = next_indexer<indexer_8_a3>::type;
+			using indexer_9_a3 = next_indexer_t<indexer_8_a3>;
 			static_assert(std::is_same_v<indexer_9_a3, std::pair<std::index_sequence<1, 1, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer10_a3 = next_indexer<indexer_9_a3>::type;
+			using indexer10_a3 = next_indexer_t<indexer_9_a3>;
 			static_assert(std::is_same_v<indexer10_a3, std::pair<std::index_sequence<0, 2, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer11_a3 = next_indexer<indexer10_a3>::type;
+			using indexer11_a3 = next_indexer_t<indexer10_a3>;
 			static_assert(is_last_indexer_v<indexer11_a3>);
 			static_assert(std::is_same_v<indexer11_a3, std::pair<std::index_sequence<1, 2, 1>, std::index_sequence<2, 3, 2>>>);
-			using indexer12_a3 = next_indexer<indexer11_a3>::type;
+			using indexer12_a3 = next_indexer_t<indexer11_a3>;
 			static_assert(std::is_same_v<indexer12_a3, std::pair<std::index_sequence<0, 0, 0>, std::index_sequence<2, 3, 2>>>);
 		}
 	}
@@ -454,15 +454,15 @@ namespace test {
 			constexpr int a[6]{1, 2, 3, 4, 5, 6};
 			using idx0 = indexer_of_t<decltype(a)>;
 			static_assert(get<idx0>(a) == 1);
-			using idx1 = next_indexer<idx0>::type;
+			using idx1 = next_indexer_t<idx0>;
 			static_assert(get<idx1>(a) == 2);
-			using idx2 = next_indexer<idx1>::type;
+			using idx2 = next_indexer_t<idx1>;
 			static_assert(get<idx2>(a) == 3);
-			using idx3 = next_indexer<idx2>::type;
+			using idx3 = next_indexer_t<idx2>;
 			static_assert(get<idx3>(a) == 4);
-			using idx4 = next_indexer<idx3>::type;
+			using idx4 = next_indexer_t<idx3>;
 			static_assert(get<idx4>(a) == 5);
-			using idx5 = next_indexer<idx4>::type;
+			using idx5 = next_indexer_t<idx4>;
 			static_assert(get<idx5>(a) == 6);
 		}
 
@@ -503,15 +503,15 @@ namespace test {
 			constexpr std::array<int, 6> a{1, 2, 3, 4, 5, 6};
 			using idx0 = indexer_of_t<decltype(a)>;
 			static_assert(get<idx0>(a) == 1);
-			using idx1 = next_indexer<idx0>::type;
+			using idx1 = next_indexer_t<idx0>;
 			static_assert(get<idx1>(a) == 2);
-			using idx2 = next_indexer<idx1>::type;
+			using idx2 = next_indexer_t<idx1>;
 			static_assert(get<idx2>(a) == 3);
-			using idx3 = next_indexer<idx2>::type;
+			using idx3 = next_indexer_t<idx2>;
 			static_assert(get<idx3>(a) == 4);
-			using idx4 = next_indexer<idx3>::type;
+			using idx4 = next_indexer_t<idx3>;
 			static_assert(get<idx4>(a) == 5);
-			using idx5 = next_indexer<idx4>::type;
+			using idx5 = next_indexer_t<idx4>;
 			static_assert(get<idx5>(a) == 6);
 		}
 
@@ -548,6 +548,43 @@ namespace test {
 			static_assert(get<idx_last>(a) == 235);
 		}
 	}
+
+	constexpr void offset_checks()
+	{
+		{ // c-array, 2-dim
+			constexpr int a[3][4]{
+				{10, 20, 30, 40},
+				{11, 21, 31, 41},
+				{12, 22, 32, 42},
+			};
+
+			using ext_a = extents_of_t<decltype(a)>;
+			using idx0 = indexer_from_offset_t<0, ext_a>;
+			static_assert(get<idx0>(a) == 10);
+			using idx1 = indexer_from_offset_t<1, ext_a>;
+			static_assert(get<idx1>(a) == 20);
+			using idx2 = indexer_from_offset_t<2, ext_a>;
+			static_assert(get<idx2>(a) == 30);
+			using idx3 = indexer_from_offset_t<3, ext_a>;
+			static_assert(get<idx3>(a) == 40);
+			using idx4 = indexer_from_offset_t<4, ext_a>;
+			static_assert(get<idx4>(a) == 11);
+			using idx5 = indexer_from_offset_t<5, ext_a>;
+			static_assert(get<idx5>(a) == 21);
+			using idx6 = indexer_from_offset_t<6, ext_a>;
+			static_assert(get<idx6>(a) == 31);
+			using idx7 = indexer_from_offset_t<7, ext_a>;
+			static_assert(get<idx7>(a) == 41);
+			using idx8 = indexer_from_offset_t<8, ext_a>;
+			static_assert(get<idx8>(a) == 12);
+			using idx9 = indexer_from_offset_t<9, ext_a>;
+			static_assert(get<idx9>(a) == 22);
+			using idx10 = indexer_from_offset_t<10, ext_a>;
+			static_assert(get<idx10>(a) == 32);
+			using idx11 = indexer_from_offset_t<11, ext_a>;
+			static_assert(get<idx11>(a) == 42);
+		}
+	}
 }
 
 int main()
@@ -558,6 +595,7 @@ int main()
 	test::indexer_support_checks();
 	test::indexer_usage_checks();
 	test::indexer_access_checks();
+	test::offset_checks();
 
 	std::cout << "###\n";
 

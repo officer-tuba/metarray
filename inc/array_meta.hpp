@@ -76,12 +76,12 @@ struct extents_of;
 
 template <array T, std::size_t...Is>
 struct extents_of<T, std::index_sequence<Is...>> {
-    using type = std::index_sequence<extent_v<T, Is>...>;
+	using type = std::index_sequence<extent_v<T, Is>...>;
 };
 
 template <array T>
 struct extents_of<T> {
-    using type = extents_of<T, std::make_index_sequence<rank_v<T>>>::type;
+	using type = extents_of<T, std::make_index_sequence<rank_v<T>>>::type;
 };
 
 template <array T>
@@ -89,7 +89,7 @@ using extents_of_t = extents_of<T>::type;
 
 template <typename T>
 struct remove_extent {
-    using type = T;
+	using type = T;
 };
 
 template <typename T, std::size_t S>
@@ -97,7 +97,7 @@ struct remove_extent<T[S]> : std::remove_extent<T[S]>{};
 
 template <std_array T>
 struct remove_extent<T> {
-    using type = T::value_type;
+	using type = T::value_type;
 };
 
 template <array T>
@@ -129,7 +129,7 @@ struct total_items<T> {
 
 template <typename T, std::size_t S>
 struct total_items<T[S]> {
-    inline static constexpr auto value{S * total_items<remove_extent_t<T[S]>>::value};
+	inline static constexpr auto value{S * total_items<remove_extent_t<T[S]>>::value};
 };
 
 template <typename T>
@@ -150,19 +150,19 @@ struct indexer_of;
 
 template <array T, std::size_t...Is>
 struct indexer_of<T, std::index_sequence<Is...>> {
-    using type = std::pair<std::index_sequence<zero_index<Is>...>, extents_of_t<T>>;
+	using type = std::pair<std::index_sequence<zero_index<Is>...>, extents_of_t<T>>;
 };
 
 template <typename...>
 struct last_indexer_of;
 template <array T, std::size_t...Is>
 struct last_indexer_of<T, std::index_sequence<Is...>> {
-    using type = std::pair<std::index_sequence<(extent_v<T, Is> - 1)...>, extents_of_t<T>>;
+	using type = std::pair<std::index_sequence<(extent_v<T, Is> - 1)...>, extents_of_t<T>>;
 };
 
 template <array T>
 struct last_indexer_of<T> {
-    using type = last_indexer_of<T, std::make_index_sequence<rank_v<T>>>::type;
+	using type = last_indexer_of<T, std::make_index_sequence<rank_v<T>>>::type;
 };
 
 template <array T>
@@ -170,7 +170,7 @@ using last_indexer_of_t = last_indexer_of<T>::type;
 
 template <array T>
 struct indexer_of<T> {
-    using type = indexer_of<T, std::make_index_sequence<rank_v<T>>>::type;
+	using type = indexer_of<T, std::make_index_sequence<rank_v<T>>>::type;
 };
 
 template <array T>
@@ -194,70 +194,92 @@ struct concat_sequence;
 
 template <std::size_t S>
 struct concat_sequence<std::index_sequence<S>> {
-    using type = std::index_sequence<S>;
+	using type = std::index_sequence<S>;
 };
 
 template <std::size_t...Heads, std::size_t...Tails>
 struct concat_sequence<std::index_sequence<Heads...>, std::index_sequence<Tails...>> {
-    using type = std::index_sequence<Heads..., Tails...>;
+	using type = std::index_sequence<Heads..., Tails...>;
 };
+
+template <typename...Seqs>//TODO: can we "concept" this?
+using concat_sequence_t = concat_sequence<Seqs...>::type;
 
 template <typename...>
 struct index_sequence_head;
 
 template <std::size_t Head, std::size_t...Tail>
 struct index_sequence_head<std::index_sequence<Head, Tail...>> {
-    inline static constexpr auto value{Head};
-    using type = std::index_sequence<Head>;
+	inline static constexpr auto value{Head};
+	using type = std::index_sequence<Head>;
 };
+
+template <typename Seq>//TODO: can we "concept" this?
+using index_sequence_head_t = index_sequence_head<Seq>::type;
+
+template <typename Seq>//TODO: can we "concept" this?
+inline constexpr auto index_sequence_head_v{index_sequence_head<Seq>::value};
 
 template <typename...>
 struct index_sequence_tail;
 
 template <std::size_t Tail>
 struct index_sequence_tail<std::index_sequence<Tail>> {
-    inline static constexpr auto value{Tail};
-    using type = std::index_sequence<value>;
+	inline static constexpr auto value{Tail};
+	using type = std::index_sequence<value>;
 };
 
 template <std::size_t Head, std::size_t...Tail>
 struct index_sequence_tail<std::index_sequence<Head, Tail...>> {
-    inline static constexpr auto value{index_sequence_tail<std::index_sequence<Tail...>>::value};
-    using type = std::index_sequence<value>;
+	inline static constexpr auto value{index_sequence_tail<std::index_sequence<Tail...>>::value};
+	using type = std::index_sequence<value>;
 };
+
+template <typename Seq>//TODO: can we "concept" this?
+using index_sequence_tail_t = index_sequence_tail<Seq>::type;
+
+template <typename Seq>//TODO: can we "concept" this?
+inline constexpr auto index_sequence_tail_v{index_sequence_tail<Seq>::value};
 
 template <typename...>
 struct index_sequence_leading;
 
 template <std::size_t S>
 struct index_sequence_leading<std::index_sequence<S>> {
-    using type = std::index_sequence<>;
+	using type = std::index_sequence<>;
 };
 
 template <std::size_t Head, std::size_t Tail>
 struct index_sequence_leading<std::index_sequence<Head, Tail>> {
-    using type = std::index_sequence<Head>;
+	using type = std::index_sequence<Head>;
 };
 
 template <std::size_t Head, std::size_t...Tail>
 struct index_sequence_leading<std::index_sequence<Head, Tail...>> {
-    using type = typename concat_sequence<
-        std::index_sequence<Head>,
-        typename index_sequence_leading<std::index_sequence<Tail...>>::type>::type;
+	using type = concat_sequence_t<
+		std::index_sequence<Head>,
+		typename index_sequence_leading<std::index_sequence<Tail...>>::type
+	>;
 };
+
+template <typename Seq>
+using index_sequence_leading_t = index_sequence_leading<Seq>::type;
 
 template <typename...>
 struct index_sequence_trailing;
 
 template <std::size_t S>
 struct index_sequence_trailing<std::index_sequence<S>> {
-    using type = std::index_sequence<S>;
+	using type = std::index_sequence<S>;
 };
 
 template <std::size_t Head, std::size_t...Tail>
 struct index_sequence_trailing<std::index_sequence<Head, Tail...>> {
-    using type = std::index_sequence<Tail...>;
+	using type = std::index_sequence<Tail...>;
 };
+
+template <typename Seq>
+using index_sequence_trailing_t = index_sequence_trailing<Seq>::type;
 
 template <typename...>
 struct is_first_indexer;
@@ -265,7 +287,7 @@ struct is_first_indexer;
 template <std::size_t...Is, std::size_t...Es>
 requires (sizeof...(Is) == sizeof...(Es))
 struct is_first_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
-    inline static constexpr bool value{std::is_same_v<std::index_sequence<Is...>, std::index_sequence<(Is * 0)...>>};
+	inline static constexpr bool value{std::is_same_v<std::index_sequence<Is...>, std::index_sequence<(Is * 0)...>>};
 };
 
 template <typename T>
@@ -277,77 +299,109 @@ struct is_last_indexer;
 template <std::size_t...Is, std::size_t...Es>
 requires (sizeof...(Is) == sizeof...(Es))
 struct is_last_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
-    inline static constexpr bool value{std::is_same_v<std::index_sequence<Is...>, std::index_sequence<(Es - 1)...>>};
+	inline static constexpr bool value{std::is_same_v<std::index_sequence<Is...>, std::index_sequence<(Es - 1)...>>};
 };
 
 template <typename T>
 inline constexpr bool is_last_indexer_v{is_last_indexer<T>::value};
 
-//TODO: need a pev_indexer?
-//TODO: how to create next_indexer_t alias (tricky... impossible?)
 template <typename...>
 struct next_indexer;
 
 template <std::size_t I, std::size_t E>
 struct next_indexer<std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
-    inline static constexpr bool carries{I + 1 == E};
-    using type = std::pair<std::index_sequence<(I + 1) < E ? I + 1 : 0>, std::index_sequence<E>>;
+	inline static constexpr bool carries{I + 1 == E};
+	using type = std::pair<std::index_sequence<(I + 1) < E ? I + 1 : 0>, std::index_sequence<E>>;
 };
 
 template <std::size_t...Is, std::size_t...Es>
 requires (sizeof...(Is) == sizeof...(Es))
 struct next_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
 private:
-    inline static constexpr bool carries{
-        next_indexer<std::pair<
-            typename index_sequence_head<std::index_sequence<Is...>>::type,
-            typename index_sequence_head<std::index_sequence<Es...>>::type
-        >>::carries
-    };
+	inline static constexpr bool carries{
+		next_indexer<std::pair<
+			index_sequence_head_t<std::index_sequence<Is...>>,
+			index_sequence_head_t<std::index_sequence<Es...>>
+		>>::carries
+	};
 
-    // indices reversed
-    // inline static constexpr bool carries{
-    //     next_indexer<std::pair<
-    //         typename index_sequence_tail<std::index_sequence<Is...>>::type,
-    //         typename index_sequence_tail<std::index_sequence<Es...>>::type
-    //     >>::carries
-    // };
+	// indices reversed
+	// inline static constexpr bool carries{
+	//     next_indexer<std::pair<
+	//         index_sequence_tail_t<std::index_sequence<Is...>>,
+	//         index_sequence_tail_t<std::index_sequence<Es...>>
+	//     >>::carries
+	// };
 
 public:
-    using type = std::pair<std::conditional_t<carries,
-        // if the head index carries, then type is 0, "next<trailing>"
-        typename concat_sequence<
-            std::index_sequence<0>,
-            typename next_indexer<std::pair<
-                typename index_sequence_trailing<std::index_sequence<Is...>>::type,
-                typename index_sequence_trailing<std::index_sequence<Es...>>::type
-            >>::type::first_type
-        >::type,
-        // if the head index does not carry, then type is head + 1, trailing
-        typename concat_sequence<
-            std::index_sequence<index_sequence_head<std::index_sequence<Is...>>::value + 1>,
-            typename index_sequence_trailing<std::index_sequence<Is...>>::type
-        >::type
-    >, std::index_sequence<Es...>>;
+	using type = std::pair<std::conditional_t<carries,
+		// if the head index carries, then type is 0, "next<trailing>"
+		concat_sequence_t<
+			std::index_sequence<0>,
+			typename next_indexer<std::pair<
+				index_sequence_trailing_t<std::index_sequence<Is...>>,
+				index_sequence_trailing_t<std::index_sequence<Es...>>
+			>>::type::first_type
+		>,
+		// if the head index does not carry, then type is head + 1, trailing
+		concat_sequence_t<
+			std::index_sequence<index_sequence_head_v<std::index_sequence<Is...>> + 1>,
+			index_sequence_trailing_t<std::index_sequence<Is...>>
+		>
+	>, std::index_sequence<Es...>>;
 
-    // indices reversed
-    // using type = std::pair<std::conditional_t<carries,
-    //     // if the tail index carries, then type is "next<leading>", 0
-    //     typename concat_sequence<
-    //         typename next_indexer<std::pair<
-    //             typename index_sequence_leading<std::index_sequence<Is...>>::type,
-    //             typename index_sequence_leading<std::index_sequence<Es...>>::type
-    //         >>::type::first_type,
-    //         std::index_sequence<0>
-    //     >::type,
-    //     // if the tail index does not carry, then type is leading, tail + 1
-    //     typename concat_sequence<
-    //         typename index_sequence_leading<std::index_sequence<Is...>>::type,
-    //         std::index_sequence<index_sequence_tail<std::index_sequence<Is...>>::value + 1>
-    //     >::type
-    // >, std::index_sequence<Es...>>;
+	// indices reversed
+	// using type = std::pair<std::conditional_t<carries,
+	//     // if the tail index carries, then type is "next<leading>", 0
+	//     concat_sequence_t<
+	//         typename next_indexer<std::pair<
+	//             index_sequence_leading_t<std::index_sequence<Is...>>,
+	//             index_sequence_leading_t<std::index_sequence<Es...>>
+	//         >>::type::first_type,
+	//         std::index_sequence<0>
+	//     >,
+	//     // if the tail index does not carry, then type is leading, tail + 1
+	//     concat_sequence_t<
+	//         index_sequence_leading_t<std::index_sequence<Is...>>,
+	//         std::index_sequence<index_sequence_tail_v<std::index_sequence<Is...>> + 1>
+	//     >
+	// >, std::index_sequence<Es...>>;
 };
 
+template <typename I>//TODO: can we "concept" this?
+using next_indexer_t = next_indexer<I>::type;
+
+// --- offsets -----------------------------------------------------------------------------------------------------------------------------
+template <typename...>
+struct indexer_from_offset;
+
+template <std::size_t O, std::size_t E>
+struct indexer_from_offset<std::integral_constant<std::size_t, O>, std::index_sequence<E>> {
+	using type = std::pair<std::index_sequence<O % E>, std::index_sequence<E>>;
+};
+
+template <std::size_t O, std::size_t...Es>
+struct indexer_from_offset<std::integral_constant<std::size_t, O>, std::index_sequence<Es...>> {
+private:
+	inline static constexpr auto tail_extent{index_sequence_tail_v<std::index_sequence<Es...>>};
+
+public:
+	using type = std::pair<
+		concat_sequence_t<
+			typename indexer_from_offset<
+				std::integral_constant<std::size_t, O / tail_extent>,
+				index_sequence_leading_t<std::index_sequence<Es...>>
+			>::type::first_type,
+			std::index_sequence<O % tail_extent>
+		>,
+		std::index_sequence<Es...>
+	>;
+};
+
+template <std::size_t O, typename E>//TODO: left off here - can we "concept" extents?
+using indexer_from_offset_t = indexer_from_offset<std::integral_constant<std::size_t, O>, E>::type;
+
+// --- access ------------------------------------------------------------------------------------------------------------------------------
 namespace detail {
 
 template <typename...>
@@ -355,27 +409,27 @@ struct get_impl;
 
 template <array A, std::size_t I, std::size_t E>
 struct get_impl<A, std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
-    static constexpr auto& value(const A& array)
-    {
-        return array[I];
-    }
+	static constexpr auto& value(const A& array)
+	{
+		return array[I];
+	}
 };
 
 template <array A, std::size_t...Is, std::size_t...Es>
 struct get_impl<A, std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
-    static constexpr auto& value(const A& array)
-    {
-        return get_impl<remove_extent_t<A>,
-            std::pair<
-                typename index_sequence_trailing<std::index_sequence<Is...>>::type,
-                typename index_sequence_trailing<std::index_sequence<Es...>>::type
-            >
-        >::value(array[head_index]);
-        //>::value(*const_cast<std::remove_cv_t<remove_extent_t<A>>*>(&array[head_index]));
-    }
+	static constexpr auto& value(const A& array)
+	{
+		return get_impl<remove_extent_t<A>,
+			std::pair<
+				index_sequence_trailing_t<std::index_sequence<Is...>>,
+				index_sequence_trailing_t<std::index_sequence<Es...>>
+			>
+		>::value(array[head_index]);
+		//>::value(*const_cast<std::remove_cv_t<remove_extent_t<A>>*>(&array[head_index]));
+	}
 
 private:
-    static constexpr auto head_index{index_sequence_head<std::index_sequence<Is...>>::value};
+	static constexpr auto head_index{index_sequence_head_v<std::index_sequence<Is...>>};
 };
 
 }//detail
@@ -384,7 +438,7 @@ template <typename Idx, array A>
 requires valid_indexer<A, Idx>
 constexpr auto& get(const A& array)
 {
-    return detail::get_impl<A, Idx>::value(array);
+	return detail::get_impl<A, Idx>::value(array);
 }
 
 // template <typename Idx, array A>
@@ -394,3 +448,14 @@ constexpr auto& get(const A& array)
 // }
 
 }//array_meta
+
+
+//TODO: offset_from_indexer
+
+//TODO: maybe?
+// prev_indexer
+// flatten_extent
+// flatten_all_extents
+// stride ops
+// increment_indexer_by#
+// decrement_indexer_by#
