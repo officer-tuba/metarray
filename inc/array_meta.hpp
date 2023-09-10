@@ -7,7 +7,6 @@
 #include <utility>
 
 namespace array_meta {
-
 // --- array traits/concepts ---------------------------------------------------------------------------------------------------------------
 template <typename T>
 concept c_array = std::is_array_v<T>;
@@ -141,6 +140,19 @@ struct total_items<T> {
 template <array T>
 inline constexpr auto total_items_v{total_items<T>::value};
 
+// --- support traits/concepts -------------------------------------------------------------------------------------------------------------
+template <typename...>
+struct is_index_sequence : std::false_type{};
+
+template <std::size_t...S>
+struct is_index_sequence<std::index_sequence<S...>> : std::true_type{};
+
+template <typename T>
+inline constexpr bool is_index_sequence_v{is_index_sequence<T>::value};
+
+template <typename T>
+concept index_sequence = is_index_sequence_v<T>;
+
 // --- indexer -----------------------------------------------------------------------------------------------------------------------------
 template <std::size_t>
 inline constexpr std::size_t zero_index{0};
@@ -202,8 +214,8 @@ struct concat_sequence<std::index_sequence<Heads...>, std::index_sequence<Tails.
 	using type = std::index_sequence<Heads..., Tails...>;
 };
 
-template <typename...Seqs>//TODO: can we "concept" this?
-using concat_sequence_t = concat_sequence<Seqs...>::type;
+template <index_sequence...Seq>
+using concat_sequence_t = concat_sequence<Seq...>::type;
 
 template <typename...>
 struct index_sequence_head;
@@ -214,10 +226,10 @@ struct index_sequence_head<std::index_sequence<Head, Tail...>> {
 	using type = std::index_sequence<Head>;
 };
 
-template <typename Seq>//TODO: can we "concept" this?
+template <index_sequence Seq>
 using index_sequence_head_t = index_sequence_head<Seq>::type;
 
-template <typename Seq>//TODO: can we "concept" this?
+template <index_sequence Seq>
 inline constexpr auto index_sequence_head_v{index_sequence_head<Seq>::value};
 
 template <typename...>
@@ -235,10 +247,10 @@ struct index_sequence_tail<std::index_sequence<Head, Tail...>> {
 	using type = std::index_sequence<value>;
 };
 
-template <typename Seq>//TODO: can we "concept" this?
+template <index_sequence Seq>
 using index_sequence_tail_t = index_sequence_tail<Seq>::type;
 
-template <typename Seq>//TODO: can we "concept" this?
+template <index_sequence Seq>
 inline constexpr auto index_sequence_tail_v{index_sequence_tail<Seq>::value};
 
 template <typename...>
@@ -398,7 +410,7 @@ public:
 	>;
 };
 
-template <std::size_t O, typename E>//TODO: left off here - can we "concept" extents?
+template <std::size_t O, index_sequence E>
 using indexer_from_offset_t = indexer_from_offset<std::integral_constant<std::size_t, O>, E>::type;
 
 // --- access ------------------------------------------------------------------------------------------------------------------------------
