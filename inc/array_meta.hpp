@@ -177,6 +177,19 @@ template <array T>
 using indexer_of_t = indexer_of<T>::type;
 
 template <typename...>
+struct is_valid_indexer_of : std::false_type{};
+
+template <array A, std::size_t...Is, std::size_t...Es>
+requires (rank_v<A> == sizeof...(Is) && sizeof...(Is) == sizeof...(Es) && ((Is < Es) && ...))
+struct is_valid_indexer_of<A, std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> : std::true_type{};
+
+template <array A, typename Idx>
+inline constexpr auto is_valid_indexer_of_v{is_valid_indexer_of<A, Idx>::value};
+
+template <typename A, typename Idx>
+concept valid_indexer = is_valid_indexer_of_v<A, Idx>;
+
+template <typename...>
 struct concat_sequence;
 
 template <std::size_t S>
@@ -342,7 +355,7 @@ struct get_impl;
 
 template <array A, std::size_t I, std::size_t E>
 struct get_impl<A, std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
-    static constexpr auto& value(A& array)
+    static constexpr auto& value(const A& array)
     {
         return array[I];
     }
@@ -350,7 +363,7 @@ struct get_impl<A, std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
 
 template <array A, std::size_t...Is, std::size_t...Es>
 struct get_impl<A, std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
-    static constexpr auto& value(A& array)
+    static constexpr auto& value(const A& array)
     {
         return get_impl<remove_extent_t<A>,
             std::pair<
@@ -358,6 +371,7 @@ struct get_impl<A, std::pair<std::index_sequence<Is...>, std::index_sequence<Es.
                 typename index_sequence_trailing<std::index_sequence<Es...>>::type
             >
         >::value(array[head_index]);
+        //>::value(*const_cast<std::remove_cv_t<remove_extent_t<A>>*>(&array[head_index]));
     }
 
 private:
@@ -366,11 +380,17 @@ private:
 
 }//detail
 
-//TODO: concept(s) and/or requires to validate Idx type
 template <typename Idx, array A>
-constexpr auto& get(A& array)
+requires valid_indexer<A, Idx>
+constexpr auto& get(const A& array)
 {
     return detail::get_impl<A, Idx>::value(array);
 }
+
+// template <typename Idx, array A>
+// auto& get(A& array)
+// {
+//     return detail::get_impl<A, Idx>::value(array);
+// }
 
 }//array_meta

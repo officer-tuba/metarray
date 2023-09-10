@@ -499,22 +499,53 @@ namespace test {
 			static_assert(get<idx_last>(a) == 235);
 		}
 
-		{ // c-array, 1-dim ***RUNTIME USAGE***
-			int a[6]{1, 2, 3, 4, 5, 6};
+		{ // std array, 1-dim
+			constexpr std::array<int, 6> a{1, 2, 3, 4, 5, 6};
 			using idx0 = indexer_of_t<decltype(a)>;
-			std::cout << get<idx0>(a) << '\n';
+			static_assert(get<idx0>(a) == 1);
 			using idx1 = next_indexer<idx0>::type;
-			std::cout << get<idx1>(a) << '\n';
+			static_assert(get<idx1>(a) == 2);
 			using idx2 = next_indexer<idx1>::type;
-			std::cout << get<idx2>(a) << '\n';
+			static_assert(get<idx2>(a) == 3);
 			using idx3 = next_indexer<idx2>::type;
-			std::cout << get<idx3>(a) << '\n';
+			static_assert(get<idx3>(a) == 4);
 			using idx4 = next_indexer<idx3>::type;
-			std::cout << get<idx4>(a) << '\n';
+			static_assert(get<idx4>(a) == 5);
 			using idx5 = next_indexer<idx4>::type;
-			std::cout << get<idx5>(a) << '\n';
-			get<idx5>(a) = 999;
-			std::cout << get<idx5>(a) << '\n';
+			static_assert(get<idx5>(a) == 6);
+		}
+
+		{ // std array, 2-dim
+			constexpr std::array<std::array<int, 4>, 3> a{{
+				{10, 20, 30, 40},
+				{11, 21, 31, 41},
+				{12, 22, 32, 42},
+			}};
+
+			using idx0 = indexer_of_t<decltype(a)>;
+			static_assert(get<idx0>(a) == 10);
+			using idx_last = last_indexer_of_t<decltype(a)>;
+			static_assert(get<idx_last>(a) == 42);
+		}
+
+		{ // std array 3-dim
+			constexpr std::array<std::array<std::array<int, 5>, 3>, 2> a{{
+				{{//a[0]
+					{111, 112, 113, 114, 115},
+					{121, 122, 123, 124, 125},
+					{131, 132, 133, 134, 135}
+				}},
+				{{//a[1]
+					{211, 212, 213, 214, 215},
+					{221, 222, 223, 224, 225},
+					{231, 232, 233, 234, 235}
+				}}
+			}};
+
+			using idx0 = indexer_of_t<decltype(a)>;
+			static_assert(get<idx0>(a) == 111);
+			using idx_last = last_indexer_of_t<decltype(a)>;
+			static_assert(get<idx_last>(a) == 235);
 		}
 	}
 }
