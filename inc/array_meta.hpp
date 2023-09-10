@@ -188,6 +188,8 @@ struct indexer_of<T> {
 template <array T>
 using indexer_of_t = indexer_of<T>::type;
 
+//TODO: try to add "is_valid_indexer" that checks for indexer type and indices vs extents, without validation against an array type
+
 template <typename...>
 struct is_valid_indexer_of : std::false_type{};
 
@@ -337,14 +339,6 @@ private:
 		>>::carries
 	};
 
-	// indices reversed
-	// inline static constexpr bool carries{
-	//     next_indexer<std::pair<
-	//         index_sequence_tail_t<std::index_sequence<Is...>>,
-	//         index_sequence_tail_t<std::index_sequence<Es...>>
-	//     >>::carries
-	// };
-
 public:
 	using type = std::pair<std::conditional_t<carries,
 		// if the head index carries, then type is 0, "next<trailing>"
@@ -361,23 +355,6 @@ public:
 			index_sequence_trailing_t<std::index_sequence<Is...>>
 		>
 	>, std::index_sequence<Es...>>;
-
-	// indices reversed
-	// using type = std::pair<std::conditional_t<carries,
-	//     // if the tail index carries, then type is "next<leading>", 0
-	//     concat_sequence_t<
-	//         typename next_indexer<std::pair<
-	//             index_sequence_leading_t<std::index_sequence<Is...>>,
-	//             index_sequence_leading_t<std::index_sequence<Es...>>
-	//         >>::type::first_type,
-	//         std::index_sequence<0>
-	//     >,
-	//     // if the tail index does not carry, then type is leading, tail + 1
-	//     concat_sequence_t<
-	//         index_sequence_leading_t<std::index_sequence<Is...>>,
-	//         std::index_sequence<index_sequence_tail_v<std::index_sequence<Is...>> + 1>
-	//     >
-	// >, std::index_sequence<Es...>>;
 };
 
 template <typename I>//TODO: can we "concept" this?
@@ -413,6 +390,31 @@ public:
 template <std::size_t O, index_sequence E>
 using indexer_from_offset_t = indexer_from_offset<std::integral_constant<std::size_t, O>, E>::type;
 
+template <typename...>
+struct offset_from_indexer;
+
+template <std::size_t I, std::size_t E>
+struct offset_from_indexer<std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
+	inline static constexpr auto value{I};
+};
+
+template <std::size_t...Is, std::size_t...Es>
+struct offset_from_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
+private:
+	inline static constexpr auto tail_idx{index_sequence_tail_v<std::index_sequence<Is...>>};
+	inline static constexpr auto tail_ext{index_sequence_tail_v<std::index_sequence<Es...>>};
+
+	using leading = std::pair<
+		index_sequence_leading_t<std::index_sequence<Is...>>,
+		index_sequence_leading_t<std::index_sequence<Es...>>>;
+
+public:
+	inline static constexpr auto value{tail_idx + (tail_ext * offset_from_indexer<leading>::value)};
+};
+
+template <typename Idx>//TODO: "concept" this?
+inline constexpr auto offset_from_indexer_v{offset_from_indexer<Idx>::value};
+
 // --- access ------------------------------------------------------------------------------------------------------------------------------
 namespace detail {
 
@@ -421,7 +423,7 @@ struct get_impl;
 
 template <array A, std::size_t I, std::size_t E>
 struct get_impl<A, std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
-	static constexpr auto& value(const A& array)
+	inline static constexpr auto& value(const A& array)
 	{
 		return array[I];
 	}
@@ -429,7 +431,7 @@ struct get_impl<A, std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
 
 template <array A, std::size_t...Is, std::size_t...Es>
 struct get_impl<A, std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
-	static constexpr auto& value(const A& array)
+	inline static constexpr auto& value(const A& array)
 	{
 		return get_impl<remove_extent_t<A>,
 			std::pair<

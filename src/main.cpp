@@ -560,28 +560,41 @@ namespace test {
 
 			using ext_a = extents_of_t<decltype(a)>;
 			using idx0 = indexer_from_offset_t<0, ext_a>;
+			static_assert(offset_from_indexer_v<idx0> == 0);
+			
 			static_assert(get<idx0>(a) == 10);
 			using idx1 = indexer_from_offset_t<1, ext_a>;
+			static_assert(offset_from_indexer_v<idx1> == 1);
 			static_assert(get<idx1>(a) == 20);
 			using idx2 = indexer_from_offset_t<2, ext_a>;
+			static_assert(offset_from_indexer_v<idx2> == 2);
 			static_assert(get<idx2>(a) == 30);
 			using idx3 = indexer_from_offset_t<3, ext_a>;
+			static_assert(offset_from_indexer_v<idx3> == 3);
 			static_assert(get<idx3>(a) == 40);
 			using idx4 = indexer_from_offset_t<4, ext_a>;
+			static_assert(offset_from_indexer_v<idx4> == 4);
 			static_assert(get<idx4>(a) == 11);
 			using idx5 = indexer_from_offset_t<5, ext_a>;
+			static_assert(offset_from_indexer_v<idx5> == 5);
 			static_assert(get<idx5>(a) == 21);
 			using idx6 = indexer_from_offset_t<6, ext_a>;
+			static_assert(offset_from_indexer_v<idx6> == 6);
 			static_assert(get<idx6>(a) == 31);
 			using idx7 = indexer_from_offset_t<7, ext_a>;
+			static_assert(offset_from_indexer_v<idx7> == 7);
 			static_assert(get<idx7>(a) == 41);
 			using idx8 = indexer_from_offset_t<8, ext_a>;
+			static_assert(offset_from_indexer_v<idx8> == 8);
 			static_assert(get<idx8>(a) == 12);
 			using idx9 = indexer_from_offset_t<9, ext_a>;
+			static_assert(offset_from_indexer_v<idx9> == 9);
 			static_assert(get<idx9>(a) == 22);
 			using idx10 = indexer_from_offset_t<10, ext_a>;
+			static_assert(offset_from_indexer_v<idx10> == 10);
 			static_assert(get<idx10>(a) == 32);
 			using idx11 = indexer_from_offset_t<11, ext_a>;
+			static_assert(offset_from_indexer_v<idx11> == 11);
 			static_assert(get<idx11>(a) == 42);
 		}
 	}
