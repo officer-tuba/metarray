@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace array_meta {
+namespace metarray {
 // --- array traits/concepts ---------------------------------------------------------------------------------------------------------------
 template <typename T>
 concept c_array = std::is_array_v<T>;
@@ -131,8 +131,7 @@ struct total_items<T[S]> {
 	inline static constexpr auto value{S * total_items<remove_extent_t<T[S]>>::value};
 };
 
-template <typename T>
-requires std_array<T>
+template <std_array T>
 struct total_items<T> {
 	inline static constexpr auto value{std::tuple_size_v<T> * total_items<remove_extent_t<T>>::value};
 };
@@ -466,7 +465,7 @@ private:
 
 }//detail
 
-template <typename Idx, array A>
+template <valid_indexer Idx, array A>
 requires valid_indexer_of<A, Idx>
 constexpr auto& get(const A& array)
 {
@@ -479,7 +478,7 @@ constexpr auto& get(const A& array)
 //     return detail::get_impl<A, Idx>::value(array);
 // }
 
-}//array_meta
+}//metarray
 
 
 //TODO: maybe?

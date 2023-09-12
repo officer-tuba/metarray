@@ -2,11 +2,11 @@
 #include <iostream>
 #include <type_traits>
 #include <utility>
-#include "array_meta.hpp"
+#include "metarray.hpp"
 // #include "demangle.hpp"
 
 namespace test {
-	using namespace array_meta;
+	using namespace metarray;
 
 	constexpr void type_checks()
 	{
