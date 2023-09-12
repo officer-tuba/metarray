@@ -431,53 +431,25 @@ template <valid_indexer Idx>
 inline constexpr auto offset_from_indexer_v{offset_from_indexer<Idx>::value};
 
 // --- access ------------------------------------------------------------------------------------------------------------------------------
-namespace detail {
-
-template <typename...>
-struct get_impl;
-
-template <array A, std::size_t I, std::size_t E>
-requires (valid_indexer_of<A, std::pair<std::index_sequence<I>, std::index_sequence<E>>>)
-struct get_impl<A, std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
-	inline static constexpr auto& value(const A& array)
-	{
-		return array[I];
-	}
-};
-
-template <array A, std::size_t...Is, std::size_t...Es>
-requires (valid_indexer_of<A, std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>>)
-struct get_impl<A, std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
-	inline static constexpr auto& value(const A& array)
-	{
-		return get_impl<remove_extent_t<A>,
-			std::pair<
-				index_sequence_trailing_t<std::index_sequence<Is...>>,
-				index_sequence_trailing_t<std::index_sequence<Es...>>
-			>
-		>::value(array[head_index]);
-		//>::value(*const_cast<std::remove_cv_t<remove_extent_t<A>>*>(&array[head_index]));
-	}
-
-private:
-	static constexpr auto head_index{index_sequence_head_v<std::index_sequence<Is...>>};
-};
-
-}//detail
-
 template <valid_indexer Idx, array A>
-requires valid_indexer_of<A, Idx>
+requires (valid_indexer_of<A, Idx> && rank_v<A> > 0)
 constexpr auto& get(const A& array)
 {
-	return detail::get_impl<A, Idx>::value(array);
+	if constexpr (rank_v<A> == 1) {
+		return array[index_sequence_head_v<typename Idx::first_type>];
+	}
+	else {
+		return get<
+			std::pair<
+				index_sequence_trailing_t<typename Idx::first_type>,
+				index_sequence_trailing_t<typename Idx::second_type>
+			>,
+			remove_extent_t<A>
+		>(array[index_sequence_head_v<typename Idx::first_type>]);
+		// >(*const_cast<std::remove_cv_t<remove_extent_t<A>>*>(&array[index_sequence_head_v<typename Idx::first_type>]));
+
+	}
 }
-
-// template <typename Idx, array A>
-// auto& get(A& array)
-// {
-//     return detail::get_impl<A, Idx>::value(array);
-// }
-
 }//metarray
 
 
