@@ -188,7 +188,18 @@ struct indexer_of<T> {
 template <array T>
 using indexer_of_t = indexer_of<T>::type;
 
-//TODO: try to add "is_valid_indexer" that checks for indexer type and indices vs extents, without validation against an array type
+template <typename...>
+struct is_valid_indexer : std::false_type{};
+
+template <std::size_t...Is, std::size_t...Es>
+requires (sizeof...(Is) == sizeof...(Es) && ((Is < Es) && ...))
+struct is_valid_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> : std::true_type{};
+
+template <typename Idx>
+inline constexpr auto is_valid_indexer_v{is_valid_indexer<Idx>::value};
+
+template <typename Idx>
+concept valid_indexer = is_valid_indexer_v<Idx>;
 
 template <typename...>
 struct is_valid_indexer_of : std::false_type{};
@@ -201,7 +212,7 @@ template <array A, typename Idx>
 inline constexpr auto is_valid_indexer_of_v{is_valid_indexer_of<A, Idx>::value};
 
 template <typename A, typename Idx>
-concept valid_indexer = is_valid_indexer_of_v<A, Idx>;
+concept valid_indexer_of = is_valid_indexer_of_v<A, Idx>;
 
 template <typename...>
 struct concat_sequence;
@@ -299,37 +310,38 @@ template <typename...>
 struct is_first_indexer;
 
 template <std::size_t...Is, std::size_t...Es>
-requires (sizeof...(Is) == sizeof...(Es))
+requires (valid_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>>)
 struct is_first_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
 	inline static constexpr bool value{std::is_same_v<std::index_sequence<Is...>, std::index_sequence<(Is * 0)...>>};
 };
 
-template <typename T>
+template <valid_indexer T>
 inline constexpr bool is_first_indexer_v{is_first_indexer<T>::value};
 
 template <typename...>
 struct is_last_indexer;
 
 template <std::size_t...Is, std::size_t...Es>
-requires (sizeof...(Is) == sizeof...(Es))
+requires (valid_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>>)
 struct is_last_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
 	inline static constexpr bool value{std::is_same_v<std::index_sequence<Is...>, std::index_sequence<(Es - 1)...>>};
 };
 
-template <typename T>
+template <valid_indexer T>
 inline constexpr bool is_last_indexer_v{is_last_indexer<T>::value};
 
 template <typename...>
 struct next_indexer;
 
 template <std::size_t I, std::size_t E>
+requires (I < E)
 struct next_indexer<std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
 	inline static constexpr bool carries{I + 1 == E};
 	using type = std::pair<std::index_sequence<(I + 1) < E ? I + 1 : 0>, std::index_sequence<E>>;
 };
 
 template <std::size_t...Is, std::size_t...Es>
-requires (sizeof...(Is) == sizeof...(Es))
+requires (valid_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>>)
 struct next_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
 private:
 	inline static constexpr bool carries{
@@ -357,7 +369,7 @@ public:
 	>, std::index_sequence<Es...>>;
 };
 
-template <typename I>//TODO: can we "concept" this?
+template <valid_indexer I>
 using next_indexer_t = next_indexer<I>::type;
 
 // --- offsets -----------------------------------------------------------------------------------------------------------------------------
@@ -365,11 +377,13 @@ template <typename...>
 struct indexer_from_offset;
 
 template <std::size_t O, std::size_t E>
+requires (E > 0)
 struct indexer_from_offset<std::integral_constant<std::size_t, O>, std::index_sequence<E>> {
 	using type = std::pair<std::index_sequence<O % E>, std::index_sequence<E>>;
 };
 
 template <std::size_t O, std::size_t...Es>
+requires ((Es > 0),...)
 struct indexer_from_offset<std::integral_constant<std::size_t, O>, std::index_sequence<Es...>> {
 private:
 	inline static constexpr auto tail_extent{index_sequence_tail_v<std::index_sequence<Es...>>};
@@ -394,11 +408,13 @@ template <typename...>
 struct offset_from_indexer;
 
 template <std::size_t I, std::size_t E>
+requires (I < E)
 struct offset_from_indexer<std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
 	inline static constexpr auto value{I};
 };
 
 template <std::size_t...Is, std::size_t...Es>
+requires (valid_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>>)
 struct offset_from_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
 private:
 	inline static constexpr auto tail_idx{index_sequence_tail_v<std::index_sequence<Is...>>};
@@ -412,7 +428,7 @@ public:
 	inline static constexpr auto value{tail_idx + (tail_ext * offset_from_indexer<leading>::value)};
 };
 
-template <typename Idx>//TODO: "concept" this?
+template <valid_indexer Idx>
 inline constexpr auto offset_from_indexer_v{offset_from_indexer<Idx>::value};
 
 // --- access ------------------------------------------------------------------------------------------------------------------------------
@@ -422,6 +438,7 @@ template <typename...>
 struct get_impl;
 
 template <array A, std::size_t I, std::size_t E>
+requires (valid_indexer_of<A, std::pair<std::index_sequence<I>, std::index_sequence<E>>>)
 struct get_impl<A, std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
 	inline static constexpr auto& value(const A& array)
 	{
@@ -430,6 +447,7 @@ struct get_impl<A, std::pair<std::index_sequence<I>, std::index_sequence<E>>> {
 };
 
 template <array A, std::size_t...Is, std::size_t...Es>
+requires (valid_indexer_of<A, std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>>)
 struct get_impl<A, std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> {
 	inline static constexpr auto& value(const A& array)
 	{
@@ -449,7 +467,7 @@ private:
 }//detail
 
 template <typename Idx, array A>
-requires valid_indexer<A, Idx>
+requires valid_indexer_of<A, Idx>
 constexpr auto& get(const A& array)
 {
 	return detail::get_impl<A, Idx>::value(array);
@@ -463,8 +481,6 @@ constexpr auto& get(const A& array)
 
 }//array_meta
 
-
-//TODO: offset_from_indexer
 
 //TODO: maybe?
 // prev_indexer
