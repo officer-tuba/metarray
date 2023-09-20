@@ -594,6 +594,18 @@ namespace test {
 
 		using min_a = decltype(find_min<static_test_array_1>());
 		static_assert(get<min_a>(static_test_array_1::value) == 1);
+
+		constexpr auto min_a_k1{find_k_min<1, static_test_array_1>()};
+		constexpr auto result_min_a_k1_sequence{transform_to_array<static_test_array_1>(min_a_k1)};
+		static_assert(result_min_a_k1_sequence == std::array<int, 1>{1});
+
+		constexpr auto min_a_k4{find_k_min<4, static_test_array_1>()};
+		constexpr auto result_min_a_k4_sequence{transform_to_array<static_test_array_1>(min_a_k4)};
+		static_assert(result_min_a_k4_sequence == std::array<int, 4>{1, 2, 2, 3});
+
+		constexpr auto min_a_k9{find_k_min<9, static_test_array_1>()};
+		constexpr auto result_min_a_k9_sequence{transform_to_array<static_test_array_1>(min_a_k9)};
+		static_assert(result_min_a_k9_sequence == std::array<int, 9>{1, 2, 2, 3, 3, 3, 3, 4, 4});
 	}
 
 	constexpr void algo_checks()

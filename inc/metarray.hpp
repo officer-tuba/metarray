@@ -528,6 +528,51 @@ struct remove_indexer<Rem, std::tuple<Head, Idx...>> {
 template <valid_indexer Rem, typename IdxList>
 using remove_indexer_t = typename remove_indexer<Rem, IdxList>::type;
 
+template <typename...>
+struct contains_indexer;
+
+template <valid_indexer Find>
+struct contains_indexer<Find, std::tuple<>> {
+	inline static constexpr auto value{false};
+};
+
+template <valid_indexer Find, valid_indexer Idx>
+struct contains_indexer<Find, std::tuple<Idx>> {
+	inline static constexpr auto value{std::is_same_v<Find, Idx>};
+};
+
+template <valid_indexer Find, valid_indexer Head, valid_indexer...Idx>
+struct contains_indexer<Find, std::tuple<Head, Idx...>> {
+	inline static constexpr auto value{std::is_same_v<Find, Head> || contains_indexer<Find, std::tuple<Idx...>>::value};
+};
+
+template <valid_indexer Find, typename IdxList>
+inline constexpr auto contains_indexer_v{contains_indexer<Find, IdxList>::value};
+
+template <typename...>
+struct set_diff;
+
+template <valid_indexer IdxA, valid_indexer...IdxB>
+struct set_diff<std::tuple<IdxA>, std::tuple<IdxB...>> {
+	using type = std::conditional_t<
+		contains_indexer_v<IdxA, std::tuple<IdxB...>>,
+		std::tuple<>,
+		std::tuple<IdxA>
+	>;
+};
+
+template <valid_indexer HeadA, valid_indexer...IdxA, valid_indexer...IdxB>
+struct set_diff<std::tuple<HeadA, IdxA...>, std::tuple<IdxB...>> {
+	using type = std::conditional_t<
+		contains_indexer_v<HeadA, std::tuple<IdxB...>>,
+		typename set_diff<std::tuple<IdxA...>, std::tuple<IdxB...>>::type,
+		concat_tuple_t<std::tuple<HeadA>, typename set_diff<std::tuple<IdxA...>, std::tuple<IdxB...>>::type>
+	>;
+};
+
+template <typename IdxListA, typename IdxListB>
+using set_diff_t = typename set_diff<IdxListA, IdxListB>::type;
+
 // --- access ------------------------------------------------------------------------------------------------------------------------------
 template <valid_indexer Idx, array A>
 requires (valid_indexer_of<A, Idx> && rank_v<A> > 0)
@@ -707,6 +752,24 @@ template <typename StaticArray>
 constexpr auto find_min()
 {
 	return find_min<StaticArray, 0, 0>(indexer_list_of_t<unwrap_static_array_t<StaticArray>>{});
+}
+
+template <std::size_t K, typename StaticArray, valid_indexer...Idx, valid_indexer...Found>
+constexpr auto find_k_min(const std::tuple<Idx...>& idx, const std::tuple<Found...>& found)
+{
+	if constexpr (K == sizeof...(Found) || K == total_items_v<unwrap_static_array_t<StaticArray>>) {
+		return found;
+	}
+	else {
+		constexpr auto next_min{find_min<StaticArray, 0, 0>(set_diff_t<std::tuple<Idx...>, std::tuple<Found...>>{})};
+		return find_k_min<K, StaticArray>(idx, std::tuple_cat(found, std::make_tuple(next_min)));
+	}
+}
+
+template <std::size_t K, typename StaticArray>
+constexpr auto find_k_min()
+{
+	return find_k_min<K, StaticArray>(indexer_list_of_t<unwrap_static_array_t<StaticArray>>{}, std::make_tuple());
 }
 
 template <array A, typename T, typename BinOp, std::size_t I, valid_indexer...Idx>
