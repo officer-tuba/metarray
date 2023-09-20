@@ -483,7 +483,7 @@ namespace test {
 		}
 	}
 
-#pragma region "variant experiments"
+#pragma region "failed variant experiments"
 	// constexpr void iterator_checks()
 	// {
 	// 	{
@@ -612,7 +612,8 @@ namespace test {
 
 		using found_less_5 = decltype(static_find_if<static_test_array_1>([](const auto& item) constexpr { return item < 5; } ));
 		constexpr auto less_5{static_transform_to_array<static_test_array_1>(found_less_5{})};
-		static_assert(less_5 == std::array<int, 12>{1, 3, 2, 4, 3, 2, 4, 3, 4, 3, 4, 4});//TODO: unintuitive index order.
+		//TODO: unintuitive index order. problem is deep in the indexer plumbing.
+		static_assert(less_5 == std::array<int, 12>{1, 3, 2, 4, 3, 2, 4, 3, 4, 3, 4, 4});
 
 		using min_a = decltype(static_find_min<static_test_array_1>());
 		static_assert(get<min_a>(static_test_array_1::value) == 1);
@@ -621,7 +622,7 @@ namespace test {
 	constexpr void find_k_checks()
 	{
 		//NOTE: static_find_k_min<> should work regardless of array "topology", i.e.: std::array/c-array, rank, and extent(s).
-		//      unfortunately, for compile-time functionality, the arrays need to be wrapped in a type type (see: static_test_array_*).
+		//      unfortunately, for compile-time functionality, the arrays need to be wrapped in a type (see: static_test_array_*).
 
 		{//3-dim std::array tests
 			constexpr auto min_a1_k1_sequence{static_find_k_min<1, static_test_array_1>()};
