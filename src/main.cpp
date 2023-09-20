@@ -4,7 +4,8 @@
 #include <type_traits>
 #include <utility>
 #include "metarray.hpp"
-#include "demangle.hpp"
+#include "metalgo.hpp"
+// #include "demangle.hpp"
 
 namespace test {
 	using namespace metarray;
@@ -554,6 +555,7 @@ namespace test {
 #pragma endregion
 
 #pragma region "namespace scoped test arrays"
+	// 3-dim std::array
 	constexpr std::array<std::array<std::array<int, 5>, 3>, 2> test_array_1{{
 		{{//a[0]
 			{1, 2, 3, 4, 5},
@@ -568,6 +570,15 @@ namespace test {
 	}};//
 
 	struct static_test_array_1 { constexpr static auto& value{test_array_1}; };
+
+	// 2-dim c-array
+	constexpr int test_array_2[3][4]{
+		{10, 20, 30, 40},
+		{11, 21, 31, 41},
+		{12, 22, 32, 42},
+	};
+
+	struct static_test_array_2 { constexpr static auto& value{test_array_2}; };
 #pragma endregion
 
 	constexpr void find_checks()
@@ -589,23 +600,44 @@ namespace test {
 		static_assert(std::is_same_v<rem_test4, std::tuple<>>);
 
 		using found_less_5 = decltype(static_find_if<static_test_array_1>([](const auto& item) constexpr { return item < 5; } ));
-		constexpr auto less_5{transform_to_array<static_test_array_1>(found_less_5{})};
+		constexpr auto less_5{static_transform_to_array<static_test_array_1>(found_less_5{})};
 		static_assert(less_5 == std::array<int, 12>{1, 3, 2, 4, 3, 2, 4, 3, 4, 3, 4, 4});//TODO: unintuitive index order.
 
-		using min_a = decltype(find_min<static_test_array_1>());
+		using min_a = decltype(static_find_min<static_test_array_1>());
 		static_assert(get<min_a>(static_test_array_1::value) == 1);
+	}
 
-		constexpr auto min_a_k1{find_k_min<1, static_test_array_1>()};
-		constexpr auto result_min_a_k1_sequence{transform_to_array<static_test_array_1>(min_a_k1)};
-		static_assert(result_min_a_k1_sequence == std::array<int, 1>{1});
+	constexpr void find_k_checks()
+	{
+		//NOTE: static_find_k_min<> should work regardless of array "topology", i.e.: std::array/c-array, ranks, and extents.
 
-		constexpr auto min_a_k4{find_k_min<4, static_test_array_1>()};
-		constexpr auto result_min_a_k4_sequence{transform_to_array<static_test_array_1>(min_a_k4)};
-		static_assert(result_min_a_k4_sequence == std::array<int, 4>{1, 2, 2, 3});
+		{//3-dim std::array tests
+			constexpr auto min_a1_k1_sequence{static_find_k_min<1, static_test_array_1>()};
+			constexpr auto result_min_a1_k1{static_transform_to_array<static_test_array_1>(min_a1_k1_sequence)};
+			static_assert(result_min_a1_k1 == std::array<int, 1>{1});
 
-		constexpr auto min_a_k9{find_k_min<9, static_test_array_1>()};
-		constexpr auto result_min_a_k9_sequence{transform_to_array<static_test_array_1>(min_a_k9)};
-		static_assert(result_min_a_k9_sequence == std::array<int, 9>{1, 2, 2, 3, 3, 3, 3, 4, 4});
+			constexpr auto min_a1_k4_sequence{static_find_k_min<4, static_test_array_1>()};
+			constexpr auto result_min_a1_k4{static_transform_to_array<static_test_array_1>(min_a1_k4_sequence)};
+			static_assert(result_min_a1_k4 == std::array<int, 4>{1, 2, 2, 3});
+
+			constexpr auto min_a1_k9_sequence{static_find_k_min<9, static_test_array_1>()};
+			constexpr auto result_min_a1_k9{static_transform_to_array<static_test_array_1>(min_a1_k9_sequence)};
+			static_assert(result_min_a1_k9 == std::array<int, 9>{1, 2, 2, 3, 3, 3, 3, 4, 4});
+		}
+
+		{//2-dim c-array tests
+			constexpr auto min_a2_k1_sequence{static_find_k_min<1, static_test_array_2>()};
+			constexpr auto result_min_a2_k1{static_transform_to_array<static_test_array_2>(min_a2_k1_sequence)};
+			static_assert(result_min_a2_k1 == std::array<int, 1>{10});
+
+			constexpr auto min_a2_k4_sequence{static_find_k_min<4, static_test_array_2>()};
+			constexpr auto result_min_a2_k4{static_transform_to_array<static_test_array_2>(min_a2_k4_sequence)};
+			static_assert(result_min_a2_k4 == std::array<int, 4>{10, 11, 12, 20});
+
+			constexpr auto min_a2_k9_sequence{static_find_k_min<9, static_test_array_2>()};
+			constexpr auto result_min_a2_k9{static_transform_to_array<static_test_array_2>(min_a2_k9_sequence)};
+			static_assert(result_min_a2_k9 == std::array<int, 9>{10, 11, 12, 20, 21, 22, 30, 31, 32});
+		}
 	}
 
 	constexpr void algo_checks()
@@ -672,6 +704,7 @@ int main()
 	test::indexer_access_checks();
 	test::offset_checks();
 	test::find_checks();
+	test::find_k_checks();
 	test::algo_checks();
 
 	std::cout << "###\n";
