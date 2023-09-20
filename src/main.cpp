@@ -610,6 +610,7 @@ namespace test {
 	constexpr void find_k_checks()
 	{
 		//NOTE: static_find_k_min<> should work regardless of array "topology", i.e.: std::array/c-array, ranks, and extents.
+		//      unfortunately, for compile-time functionality, the arrays need to be wrapped in a type type (see: static_test_array_*).
 
 		{//3-dim std::array tests
 			constexpr auto min_a1_k1_sequence{static_find_k_min<1, static_test_array_1>()};
