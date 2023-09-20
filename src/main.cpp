@@ -555,7 +555,7 @@ namespace test {
 #pragma endregion
 
 #pragma region "namespace scoped test arrays"
-	// 3-dim std::array
+	// 3-dim std::array 2x3x5
 	constexpr std::array<std::array<std::array<int, 5>, 3>, 2> test_array_1{{
 		{{//a[0]
 			{1, 2, 3, 4, 5},
@@ -571,7 +571,7 @@ namespace test {
 
 	struct static_test_array_1 { constexpr static auto& value{test_array_1}; };
 
-	// 2-dim c-array
+	// 2-dim c-array 3x4
 	constexpr int test_array_2[3][4]{
 		{10, 20, 30, 40},
 		{11, 21, 31, 41},
@@ -579,6 +579,17 @@ namespace test {
 	};
 
 	struct static_test_array_2 { constexpr static auto& value{test_array_2}; };
+
+	// 2-dim c-array 3x7
+	//NOTE: from https://stackoverflowteams.com/c/cppmsg/questions/28
+	//      ...but "L[i].size() is unbounded, for i in [1, M)" can't be true for actual arrays.
+	constexpr int test_array_3[3][7]{
+		{10, 20, 30, 40, 50, 60, 70},// 80}, (removed 80 from the question's example - see note above).
+		{15, 25, 35, 45, 55, 65, 75},
+		{-2,  3, 11, 15, 53, 55, 90},
+	};
+
+	struct static_test_array_3 { constexpr static auto& value{test_array_3}; };
 #pragma endregion
 
 	constexpr void find_checks()
@@ -609,7 +620,7 @@ namespace test {
 
 	constexpr void find_k_checks()
 	{
-		//NOTE: static_find_k_min<> should work regardless of array "topology", i.e.: std::array/c-array, ranks, and extents.
+		//NOTE: static_find_k_min<> should work regardless of array "topology", i.e.: std::array/c-array, rank, and extent(s).
 		//      unfortunately, for compile-time functionality, the arrays need to be wrapped in a type type (see: static_test_array_*).
 
 		{//3-dim std::array tests
@@ -638,6 +649,21 @@ namespace test {
 			constexpr auto min_a2_k9_sequence{static_find_k_min<9, static_test_array_2>()};
 			constexpr auto result_min_a2_k9{static_transform_to_array<static_test_array_2>(min_a2_k9_sequence)};
 			static_assert(result_min_a2_k9 == std::array<int, 9>{10, 11, 12, 20, 21, 22, 30, 31, 32});
+		}
+
+		{//2-dim c-array tests
+			constexpr auto min_a3_k1_sequence{static_find_k_min<1, static_test_array_3>()};
+			constexpr auto result_min_a3_k1{static_transform_to_array<static_test_array_3>(min_a3_k1_sequence)};
+			static_assert(result_min_a3_k1 == std::array<int, 1>{-2});
+
+			constexpr auto min_a3_k4_sequence{static_find_k_min<4, static_test_array_3>()};
+			constexpr auto result_min_a3_k4{static_transform_to_array<static_test_array_3>(min_a3_k4_sequence)};
+			static_assert(result_min_a3_k4 == std::array<int, 4>{-2, 3, 10, 11});
+
+			//NOTE: compile-time solution to question at https://stackoverflowteams.com/c/cppmsg/questions/28
+			constexpr auto min_a3_k7_sequence{static_find_k_min<7, static_test_array_3>()};
+			constexpr auto result_min_a3_k7{static_transform_to_array<static_test_array_3>(min_a3_k7_sequence)};
+			static_assert(result_min_a3_k7 == std::array<int, 7>{-2, 3, 10, 11, 15, 15, 20});
 		}
 	}
 
