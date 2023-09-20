@@ -5,6 +5,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+// #include <variant>
 
 namespace metarray {
 // --- array traits/concepts ---------------------------------------------------------------------------------------------------------------
@@ -128,12 +129,12 @@ struct total_items<T> {
 
 template <typename T, std::size_t S>
 struct total_items<T[S]> {
-	inline static constexpr auto value{S * total_items<remove_extent_t<T[S]>>::value};
+	inline static constexpr auto value{S * total_items<std::remove_cvref_t<remove_extent_t<T[S]>>>::value};
 };
 
 template <std_array T>
 struct total_items<T> {
-	inline static constexpr auto value{std::tuple_size_v<T> * total_items<remove_extent_t<T>>::value};
+	inline static constexpr auto value{std::tuple_size_v<T> * total_items<std::remove_cvref_t<remove_extent_t<T>>>::value};
 };
 
 template <array T>
@@ -195,7 +196,7 @@ requires (sizeof...(Is) == sizeof...(Es) && ((Is < Es) && ...))
 struct is_valid_indexer<std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> : std::true_type{};
 
 template <typename Idx>
-inline constexpr auto is_valid_indexer_v{is_valid_indexer<Idx>::value};
+inline constexpr auto is_valid_indexer_v{is_valid_indexer<std::remove_cvref_t<Idx>>::value};
 
 template <typename Idx>
 concept valid_indexer = is_valid_indexer_v<Idx>;
@@ -208,7 +209,7 @@ requires (rank_v<A> == sizeof...(Is) && sizeof...(Is) == sizeof...(Es) && ((Is <
 struct is_valid_indexer_of<A, std::pair<std::index_sequence<Is...>, std::index_sequence<Es...>>> : std::true_type{};
 
 template <array A, typename Idx>
-inline constexpr auto is_valid_indexer_of_v{is_valid_indexer_of<A, Idx>::value};
+inline constexpr auto is_valid_indexer_of_v{is_valid_indexer_of<A, std::remove_cvref_t<Idx>>::value};
 
 template <typename A, typename Idx>
 concept valid_indexer_of = is_valid_indexer_of_v<A, Idx>;
@@ -430,26 +431,330 @@ public:
 template <valid_indexer Idx>
 inline constexpr auto offset_from_indexer_v{offset_from_indexer<Idx>::value};
 
+// --- iteration ---------------------------------------------------------------------------------------------------------------------------
+// template <typename...>
+// struct concat_variant;
+
+// template <typename T>
+// struct concat_variant<std::variant<T>> {
+// 	using type = std::variant<T>;
+// };
+
+// template <typename...Heads, typename...Tails>
+// struct concat_variant<std::variant<Heads...>, std::variant<Tails...>> {
+// 	using type = std::variant<Heads..., Tails...>;
+// };
+
+// template <typename...T>
+// using concat_variant_t = concat_variant<T...>::type;
+
+// template <typename...>
+// struct index_iterator_of;
+
+// template <array A, valid_indexer Idx>
+// requires is_last_indexer_v<Idx>
+// struct index_iterator_of<A, Idx> {
+// 	using type = std::variant<Idx>;
+// };
+
+// template <array A, valid_indexer Idx>
+// struct index_iterator_of<A, Idx> {
+// 	using type = concat_variant_t<std::variant<Idx>, typename index_iterator_of<A, next_indexer_t<Idx>>::type>;
+// };
+
+// template <array A>
+// struct index_iterator_of<A> {
+// 	using type = index_iterator_of<A, indexer_of_t<A>>::type;
+// };
+
+// template <array A>
+// using index_iterator_of_t = index_iterator_of<A>::type;
+
+template <typename...>
+struct concat_tuple;
+
+template <typename T>
+struct concat_tuple<std::tuple<T>> {
+	using type = std::tuple<T>;
+};
+
+template <typename...Heads, typename...Tails>
+struct concat_tuple<std::tuple<Heads...>, std::tuple<Tails...>> {
+	using type = std::tuple<Heads..., Tails...>;
+};
+
+template <typename...T>
+using concat_tuple_t = concat_tuple<T...>::type;
+
+template <typename...>
+struct indexer_list_of;
+
+template <array A, valid_indexer Idx>
+requires is_last_indexer_v<Idx>
+struct indexer_list_of<A, Idx> {
+	using type = std::tuple<Idx>;
+};
+
+template <array A, valid_indexer Idx>
+struct indexer_list_of<A, Idx> {
+	using type = concat_tuple_t<std::tuple<Idx>, typename indexer_list_of<A, next_indexer_t<Idx>>::type>;
+};
+
+template <array A>
+struct indexer_list_of<A> {
+	using type = indexer_list_of<A, indexer_of_t<A>>::type;
+};
+
+template <array A>
+using indexer_list_of_t = indexer_list_of<A>::type;
+
+template <typename...>
+struct remove_indexer;
+
+template <valid_indexer Rem, valid_indexer Idx>
+struct remove_indexer<Rem, std::tuple<Idx>> {
+	using type = std::conditional_t<std::is_same_v<Rem, Idx>, std::tuple<>, std::tuple<Idx>>;
+};
+
+template <valid_indexer Rem, valid_indexer Head, valid_indexer...Idx>
+struct remove_indexer<Rem, std::tuple<Head, Idx...>> {
+	using type = std::conditional_t<
+		std::is_same_v<Rem, Head>,
+		typename remove_indexer<Rem, std::tuple<Idx...>>::type,
+		concat_tuple_t<std::tuple<Head>, typename remove_indexer<Rem, std::tuple<Idx...>>::type>
+	>;
+};
+
+template <valid_indexer Rem, typename IdxList>
+using remove_indexer_t = typename remove_indexer<Rem, IdxList>::type;
+
 // --- access ------------------------------------------------------------------------------------------------------------------------------
 template <valid_indexer Idx, array A>
 requires (valid_indexer_of<A, Idx> && rank_v<A> > 0)
-constexpr auto& get(const A& array)
+constexpr auto get(const A& a)
 {
 	if constexpr (rank_v<A> == 1) {
-		return array[index_sequence_head_v<typename Idx::first_type>];
+		return a[index_sequence_head_v<typename std::remove_cvref_t<Idx>::first_type>];
 	}
 	else {
 		return get<
 			std::pair<
-				index_sequence_trailing_t<typename Idx::first_type>,
-				index_sequence_trailing_t<typename Idx::second_type>
-			>,
-			remove_extent_t<A>
-		>(array[index_sequence_head_v<typename Idx::first_type>]);
-		// >(*const_cast<std::remove_cv_t<remove_extent_t<A>>*>(&array[index_sequence_head_v<typename Idx::first_type>]));
-
+				index_sequence_trailing_t<typename std::remove_cvref_t<Idx>::first_type>,
+				index_sequence_trailing_t<typename std::remove_cvref_t<Idx>::second_type>
+			>
+		>(a[index_sequence_head_v<typename std::remove_cvref_t<Idx>::first_type>]);
 	}
 }
+
+// template <valid_indexer Idx, array A>
+// requires (valid_indexer_of<A, Idx> && rank_v<A> > 0)
+// constexpr auto get(A& a)
+// {
+// 	if constexpr (rank_v<A> == 1) {
+// 		return a[index_sequence_head_v<typename std::remove_cvref_t<Idx>::first_type>];
+// 	}
+// 	else {
+// 		return get<
+// 			std::pair<
+// 				index_sequence_trailing_t<typename std::remove_cvref_t<Idx>::first_type>,
+// 				index_sequence_trailing_t<typename std::remove_cvref_t<Idx>::second_type>
+// 			>
+// 		>(a[index_sequence_head_v<typename std::remove_cvref_t<Idx>::first_type>]);
+// 	}
+// }
+
+// template <typename Iter, array A>
+// requires (rank_v<A> > 0)//TODO: need to concept Iter somehow
+// constexpr auto& get(const A& array, const Iter& iter)
+// {
+// 	using Idx = decltype(std::visit([](auto&& idx) { return idx; }, iter));
+
+// 	if constexpr (rank_v<A> == 1) {
+// 		return array[index_sequence_head_v<typename Idx::first_type>];
+// 	}
+// 	else {
+// 		return get<
+// 			std::pair<
+// 				index_sequence_trailing_t<typename Idx::first_type>,
+// 				index_sequence_trailing_t<typename Idx::second_type>
+// 			>,
+// 			remove_extent_t<A>
+// 		>(array[index_sequence_head_v<typename Idx::first_type>]);
+// 		// >(*const_cast<std::remove_cv_t<remove_extent_t<A>>*>(&array[index_sequence_head_v<typename Idx::first_type>]));
+
+// 	}
+// }
+
+// --- transformation ----------------------------------------------------------------------------------------------------------------------
+//TODO: shouldn't need std::remove_reference_t here. lower level types should work with or without it.
+template <typename StaticArray>
+using unwrap_static_array_t = std::remove_reference_t<decltype(StaticArray::value)>;
+
+template <typename StaticArray, valid_indexer...Idx, std::size_t...Is>
+requires ((sizeof...(Idx) <= total_items_v<unwrap_static_array_t<StaticArray>>)
+	&& (is_valid_indexer_of_v<unwrap_static_array_t<StaticArray>, Idx> && ...)
+	&& sizeof...(Is) == sizeof...(Idx))
+constexpr std::array<remove_all_extents_t<unwrap_static_array_t<StaticArray>>, sizeof...(Idx)>
+transform_to_array(const std::tuple<Idx...>&, const std::index_sequence<Is...>&)
+{
+	return {{get<Idx>(StaticArray::value)...}};
+}
+
+template <typename StaticArray, valid_indexer...Idx>
+requires ((sizeof...(Idx) <= total_items_v<unwrap_static_array_t<StaticArray>>)
+	&& (is_valid_indexer_of_v<unwrap_static_array_t<StaticArray>, Idx> && ...))
+constexpr std::array<remove_all_extents_t<unwrap_static_array_t<StaticArray>>, sizeof...(Idx)>
+transform_to_array(const std::tuple<Idx...>& idx)
+{
+	return transform_to_array<StaticArray, Idx...>(idx, std::make_index_sequence<sizeof...(Idx)>{});
+}
+
+// --- algorithms/numerics -----------------------------------------------------------------------------------------------------------------
+template <typename StaticArray, typename Pred, std::size_t I, valid_indexer...Idx>
+requires ((I == sizeof...(Idx) - 1) && (is_valid_indexer_of_v<unwrap_static_array_t<StaticArray>, Idx> && ...))
+constexpr auto static_find_if(const std::tuple<Idx...>& idx, Pred pred)
+{
+	using IdxN = std::remove_reference_t<decltype(std::get<I>(idx))>;
+	constexpr auto item{get<IdxN>(StaticArray::value)};
+
+	if constexpr (pred(item)) {
+		return std::make_tuple(IdxN{});
+	}
+	else {
+		return std::make_tuple();
+	}
+}
+
+template <typename StaticArray, typename Pred, std::size_t I, valid_indexer...Idx>
+requires ((I < sizeof...(Idx) - 1) && (is_valid_indexer_of_v<unwrap_static_array_t<StaticArray>, Idx> && ...))
+constexpr auto static_find_if(const std::tuple<Idx...>& idx, Pred pred)
+{
+	using IdxN = std::remove_reference_t<decltype(std::get<I>(idx))>;
+	constexpr auto item{get<IdxN>(StaticArray::value)};
+
+	if constexpr (pred(item)) {
+		return std::tuple_cat(std::make_tuple(IdxN{}), static_find_if<StaticArray, Pred, I + 1>(idx, pred));
+	}
+	else {
+		return static_find_if<StaticArray, Pred, I + 1>(idx, pred);
+	}
+}
+
+template <typename StaticArray, typename Pred>
+constexpr auto static_find_if(Pred pred)
+{
+	return static_find_if<StaticArray, Pred, 0>(indexer_list_of_t<unwrap_static_array_t<StaticArray>>{}, pred);
+}
+
+// template <array A, typename Pred, std::size_t I, valid_indexer...Idx>
+// requires ((I == sizeof...(Idx) - 1) && (is_valid_indexer_of_v<A, Idx> && ...))
+// constexpr auto find_if(const A& a, std::tuple<Idx...> idx, Pred pred)
+// {
+// 	using IdxN = std::remove_reference_t<decltype(std::get<I>(idx))>;
+// 	constexpr auto item{get<IdxN>(a)};
+
+// 	if constexpr (pred(item)) {
+// 		return std::make_tuple(IdxN{});
+// 	}
+// 	else {
+// 		return std::make_tuple();
+// 	}
+// }
+
+// template <array A, typename Pred, std::size_t I, valid_indexer...Idx>
+// requires ((I < sizeof...(Idx) - 1) && (is_valid_indexer_of_v<A, Idx> && ...))
+// constexpr auto find_if(const A& a, std::tuple<Idx...> idx, Pred pred)
+// {
+// 	using IdxN = std::remove_reference_t<decltype(std::get<I>(idx))>;
+// 	constexpr auto item{get<IdxN>(a)};
+
+// 	if constexpr (pred(item)) {
+// 		return std::tuple_cat(std::make_tuple(IdxN{}), find_if<A, Pred, I + 1>(a, idx, pred));
+// 	}
+// 	else {
+// 		return find_if<A, Pred, I + 1>(a, idx, pred);
+// 	}
+// }
+
+template <typename StaticArray, std::size_t I, std::size_t M, valid_indexer...Idx>
+constexpr auto find_min(const std::tuple<Idx...>& idx)
+{
+	using IdxMin = std::remove_reference_t<decltype(std::get<M>(idx))>;
+	using IdxN = std::remove_reference_t<decltype(std::get<I>(idx))>;
+	constexpr auto item{get<IdxN>(StaticArray::value)};
+	constexpr auto min{get<IdxMin>(StaticArray::value)};
+
+	if constexpr (I == sizeof...(Idx) - 1) {
+		if constexpr (item < min)
+		{
+			return IdxN{};
+		}
+		else {
+			return IdxMin{};
+		}
+	}
+	else {
+		if constexpr (item < min) {
+			return find_min<StaticArray, I + 1, I>(idx);
+		}
+		else {
+			return find_min<StaticArray, I + 1, M>(idx);
+		}
+	}
+}
+
+template <typename StaticArray>
+constexpr auto find_min()
+{
+	return find_min<StaticArray, 0, 0>(indexer_list_of_t<unwrap_static_array_t<StaticArray>>{});
+}
+
+template <array A, typename T, typename BinOp, std::size_t I, valid_indexer...Idx>
+requires (is_valid_indexer_of_v<A, Idx> && ...)
+constexpr T accumulate(const A& a, const std::tuple<Idx...>& idx, T init, BinOp op)
+{
+	using IdxN = decltype(std::get<I>(idx));
+
+	if constexpr (I == sizeof...(Idx) - 1) {
+		return op(get<IdxN>(a), init);
+	}
+	else {
+		return op(get<IdxN>(a), accumulate<A, T, BinOp, I + 1>(a, idx, init, op));
+	}
+}
+
+template <array A, typename T, typename BinOp>
+constexpr T accumulate(const A& a, T init, BinOp op)
+{
+	return accumulate<A, T, BinOp, 0>(a, indexer_list_of_t<A>{}, init, op);
+}
+
+template <array A, valid_indexer...Idx>
+requires (is_valid_indexer_of_v<A, Idx> && ...)
+constexpr auto sum(const A& a, const std::tuple<Idx...>&)
+{
+	return (get<Idx>(a) + ...);
+}
+
+template <array A>
+constexpr auto sum(const A& a)
+{
+	return sum(a, indexer_list_of_t<A>{});
+}
+
+template <array A, valid_indexer...Idx>
+requires (is_valid_indexer_of_v<A, Idx> && ...)
+constexpr auto product(const A& a, const std::tuple<Idx...>&)
+{
+	return (get<Idx>(a) * ...);
+}
+
+template <array A>
+constexpr auto product(const A& a)
+{
+	return product(a, indexer_list_of_t<A>{});
+}
+
 }//metarray
 
 

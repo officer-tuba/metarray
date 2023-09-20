@@ -1,9 +1,10 @@
 #include <array>
+#include <functional>
 #include <iostream>
 #include <type_traits>
 #include <utility>
 #include "metarray.hpp"
-// #include "demangle.hpp"
+#include "demangle.hpp"
 
 namespace test {
 	using namespace metarray;
@@ -480,6 +481,173 @@ namespace test {
 			static_assert(get<idx11>(a) == 42);
 		}
 	}
+
+#pragma region "variant experiments"
+	// constexpr void iterator_checks()
+	// {
+	// 	{
+	// 		using a = std::array<int, 4>;
+	// 		using idx0 = indexer_of_t<a>;
+	// 		using idx1 = next_indexer_t<idx0>;
+	// 		using idx2 = next_indexer_t<idx1>;
+	// 		using idx3 = next_indexer_t<idx2>;
+	// 		using it = index_iterator_of_t<a>;
+	// 		static_assert(std::is_same_v<it, std::variant<idx0, idx1, idx2, idx3>>);
+	// 	}
+
+	// 	{
+	// 		using a = int[3][2][3];
+	// 		using idx_0 = indexer_of_t<a>;
+	// 		using idx_1 = next_indexer_t<idx_0>;
+	// 		using idx_2 = next_indexer_t<idx_1>;
+	// 		using idx_3 = next_indexer_t<idx_2>;
+	// 		using idx_4 = next_indexer_t<idx_3>;
+	// 		using idx_5 = next_indexer_t<idx_4>;
+	// 		using idx_6 = next_indexer_t<idx_5>;
+	// 		using idx_7 = next_indexer_t<idx_6>;
+	// 		using idx_8 = next_indexer_t<idx_7>;
+	// 		using idx_9 = next_indexer_t<idx_8>;
+	// 		using idx10 = next_indexer_t<idx_9>;
+	// 		using idx11 = next_indexer_t<idx10>;
+	// 		using idx12 = next_indexer_t<idx11>;
+	// 		using idx13 = next_indexer_t<idx12>;
+	// 		using idx14 = next_indexer_t<idx13>;
+	// 		using idx15 = next_indexer_t<idx14>;
+	// 		using idx16 = next_indexer_t<idx15>;
+	// 		using idx17 = next_indexer_t<idx16>;
+	// 		using it = index_iterator_of_t<a>;
+	// 		static_assert(std::is_same_v<it, std::variant<
+	// 			idx_0, idx_1, idx_2, idx_3, idx_4, idx_5,
+	// 			idx_6, idx_7, idx_8, idx_9, idx10, idx11,
+	// 			idx12, idx13, idx14, idx15, idx16, idx17>>);
+	// 	}
+	// }
+
+	// template <array A, typename Iter, typename Idx>
+	// constexpr auto sum(const A& a, Iter iter)
+	// {
+	// 	using idx_t = decltype(std::visit([](auto&& idx) { return idx; }, iter));
+
+	// 	if constexpr (is_last_indexer_v<idx_t>) {
+	// 		return get<idx_t>(a);
+	// 	}
+	// 	else {
+	// 		iter = next_indexer_t<idx_t>{};
+	// 		return get<idx_t>(a) + sum(a, iter);
+	// 	}
+	// }
+
+		// std::cout << sum(a) << '\n';
+		// using It = index_iterator_of_t<decltype(a)>;
+
+		// It it = indexer_of_t<decltype(a)>{};
+
+		// int sigma{0};
+		// for (std::size_t i{0}; i < total_items_v<decltype(a)>; ++i) {
+		// 	std::cout << get(a, it) << '\n';
+		// 	sigma += get(a, it);
+		// 	// using idx_t = decltype(std::visit([](auto&& idx) { return idx; }, it));
+		// 	// it = next_indexer_t<idx_t>{};
+		// 	// std::cout << diagnostic::demangle<decltype(std::visit([](auto&& idx) { return idx; }, it))>() << '\n';
+		// }
+		// std::cout << '\n' << sigma << '\n';
+#pragma endregion
+
+#pragma region "namespace scoped test arrays"
+	constexpr std::array<std::array<std::array<int, 5>, 3>, 2> test_array_1{{
+		{{//a[0]
+			{1, 2, 3, 4, 5},
+			{2, 3, 4, 5, 6},
+			{3, 4, 5, 6, 7}
+		}},
+		{{//a[1]
+			{3, 4, 5, 6, 7},
+			{4, 5, 6, 7, 8},
+			{5, 6, 7, 8, 9}
+		}}
+	}};//
+
+	struct static_test_array_1 { constexpr static auto& value{test_array_1}; };
+#pragma endregion
+
+	constexpr void find_checks()
+	{
+		using found_9 = decltype(static_find_if<static_test_array_1>([](const auto& item) constexpr { return item == 9; } ));
+		static_assert(std::is_same_v<found_9, std::tuple<last_indexer_of_t<decltype(test_array_1)>>>);
+		using rem_test1 = remove_indexer_t<last_indexer_of_t<decltype(test_array_1)>, found_9>;
+		static_assert(std::is_same_v<rem_test1, std::tuple<>>);
+
+		using ext_a = extents_of_t<decltype(test_array_1)>;
+		using found_8 = decltype(static_find_if<static_test_array_1>([](const auto& item) constexpr { return item == 8; } ));
+		using found_8_expected = std::tuple<indexer_from_offset_t<28, ext_a>, indexer_from_offset_t<24, ext_a>>;
+		static_assert(std::is_same_v<found_8, found_8_expected>);
+		using rem_test2 = remove_indexer_t<indexer_from_offset_t<28, ext_a>, found_8>;
+		static_assert(std::is_same_v<rem_test2, std::tuple<indexer_from_offset_t<24, ext_a>>>);
+		using rem_test3 = remove_indexer_t<indexer_from_offset_t<24, ext_a>, found_8>;
+		static_assert(std::is_same_v<rem_test3, std::tuple<indexer_from_offset_t<28, ext_a>>>);
+		using rem_test4 = remove_indexer_t<indexer_from_offset_t<24, ext_a>, rem_test2>;
+		static_assert(std::is_same_v<rem_test4, std::tuple<>>);
+
+		using found_less_5 = decltype(static_find_if<static_test_array_1>([](const auto& item) constexpr { return item < 5; } ));
+		constexpr auto less_5{transform_to_array<static_test_array_1>(found_less_5{})};
+		static_assert(less_5 == std::array<int, 12>{1, 3, 2, 4, 3, 2, 4, 3, 4, 3, 4, 4});//TODO: unintuitive index order.
+
+		using min_a = decltype(find_min<static_test_array_1>());
+		static_assert(get<min_a>(static_test_array_1::value) == 1);
+	}
+
+	constexpr void algo_checks()
+	{
+		constexpr std::array<int, 5> a1{2, 4, 6, 8, 10};
+		static_assert(sum(a1) == 30);
+		static_assert(accumulate(a1, 0, std::plus<int>{}) == 30);
+
+		static_assert(product(a1) == 3840);
+		static_assert(accumulate(a1, 1, std::multiplies<int>{}) == 3840);
+
+		constexpr std::array<std::array<std::array<int, 5>, 3>, 2> a2{{
+			{{//a[0]
+				{111, 112, 113, 114, 115},
+				{121, 122, 123, 124, 125},
+				{131, 132, 133, 134, 135}
+			}},
+			{{//a[1]
+				{211, 212, 213, 214, 215},
+				{221, 222, 223, 224, 225},
+				{231, 232, 233, 234, 235}
+			}}
+		}};
+		static_assert(sum(a2) == 5190);
+
+		constexpr int a3[2][3][5]{
+			{//a[0]
+				{111, 112, 113, 114, 115},
+				{121, 122, 123, 124, 125},
+				{131, 132, 133, 134, 135}
+			},
+			{//a[1]
+				{211, 212, 213, 214, 215},
+				{221, 222, 223, 224, 225},
+				{231, 232, 233, 234, 235}
+			}
+		};
+		static_assert(sum(a3) == 5190);
+
+		constexpr std::array<std::array<std::array<unsigned long long, 5>, 3>, 2> a4{{
+			{{//a[0]
+				{1, 2, 3, 4, 5},
+				{2, 3, 4, 5, 6},
+				{3, 4, 5, 6, 7}
+			}},
+			{{//a[1]
+				{3, 4, 5, 6, 7},
+				{4, 5, 6, 7, 8},
+				{5, 6, 7, 8, 9}
+			}}
+		}};
+		static_assert(sum(a4) == 150);
+		static_assert(product(a4) == 408614592055345152ull);
+	}
 }
 
 int main()
@@ -491,6 +659,8 @@ int main()
 	test::indexer_usage_checks();
 	test::indexer_access_checks();
 	test::offset_checks();
+	test::find_checks();
+	test::algo_checks();
 
 	std::cout << "###\n";
 
